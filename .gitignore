@@ -1,2 +1,7 @@
 /build
 *.json
+
+# Required packages
+/imgui
+imgui.ini
+/sdl2
