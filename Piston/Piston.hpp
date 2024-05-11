@@ -2,6 +2,7 @@
 #define PISTON_HPP
 #include "Linalg.hpp"
 #include <stdio.h>
+#include "IdealGas.hpp"
 
 #define DEGToRAD(X) (2.0 * M_PI * X / 360.0)
 #define RADToDEG(X) (360.0 * X / (2 * M_PI))
@@ -61,6 +62,7 @@ public:
 
   /* Thermodynamics */
   float V_prime;
+  IdealGas* gas;
 
   /* Valves */
   float intakeValve;

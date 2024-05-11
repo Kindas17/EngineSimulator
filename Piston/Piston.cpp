@@ -37,6 +37,9 @@ Piston::Piston(CylinderGeometry geometryInfo) {
   ignitionOn = false;
   combustionAdvance = 7.5;
 
+  /* Thermodynamics */
+  gas = new IdealGas(DEFAULT_AMBIENT_PRESSURE, getChamberVolume(), 300.f);
+
   /* Initial update to initialize the piston status */
   rodFoot = {.x = +(geometry.stroke / 2) * cosf(DEGToRAD(currentAngle)),
              .y = -(geometry.stroke / 2) * sinf(DEGToRAD(currentAngle))};

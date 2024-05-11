@@ -17,11 +17,14 @@ target_link_libraries(tutorial imgui::imgui)
 
 add_subdirectory(Piston)
 add_subdirectory(Logger)
-
-target_link_libraries(tutorial Piston)
-target_link_libraries(tutorial Logger)
+add_subdirectory(IdealGas)
 
 target_include_directories(tutorial
                            PRIVATE Piston
                            PRIVATE Logger
+                           PRIVATE IdealGas
 )
+
+target_link_libraries(tutorial Piston)
+target_link_libraries(tutorial Logger)
+target_link_libraries(tutorial IdealGas)
