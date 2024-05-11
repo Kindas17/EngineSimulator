@@ -9,6 +9,8 @@ using namespace std::chrono;
 class FrameRVis {
 private:
   high_resolution_clock::time_point start;
+  high_resolution_clock::time_point end;
+  int lastDuration;
   std::vector<float> v;
 
   void addSample(float sample) {
@@ -22,8 +24,13 @@ public:
   void startClock() { start = high_resolution_clock::now(); }
 
   void endClock() {
-    const auto end = high_resolution_clock::now();
-    addSample((1000000.f / duration_cast<microseconds>(end - start).count()));
+    end = high_resolution_clock::now();
+    lastDuration = duration_cast<microseconds>(end - start).count();
+    addSample((1000000.f / lastDuration));
+  }
+
+  float getLast() {
+    return lastDuration / 1000.f;
   }
 
   size_t getSize() { return v.size(); }

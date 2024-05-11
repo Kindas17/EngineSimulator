@@ -6,9 +6,10 @@
 #include <iomanip>
 #include <iostream>
 
+int SIMULATION_MULTIPLIER = 1000;
 float FRAMETIME = 20.f; /* ms */
 float pistonX = 350.f;
-float pistonY = 500.f;
+float pistonY = 550.f;
 float engineSpeed = 0.f;
 
 int main() {
@@ -17,11 +18,11 @@ int main() {
   /* Game initialization */
   Game *game = new Game("Engine Simulator", 0, 0, 700, 700);
   FrameRVis *fVis = new FrameRVis();
+  FrameRVis *load = new FrameRVis();
   CylinderGeometry *geom = new CylinderGeometry();
   Piston *piston = new Piston(*geom);
   CycleLogger *pistonPosLogger = new CycleLogger();
-  CycleLogger *exhaustValveLog = new CycleLogger();
-  CycleLogger *intakeValveLog = new CycleLogger();
+  CycleLogger *pressureLogger = new CycleLogger();
 
   printf("Game initialized\n");
 
@@ -37,20 +38,23 @@ int main() {
   /* Game Loop */
   while (game->isGameRunning()) {
     fVis->startClock();
+    load->startClock();
     const int timeStart = SDL_GetTicks();
     PistonGraphics *pistonGraphics = new PistonGraphics(
         (vector2_T){.x = pistonX, .y = pistonY}, piston, 2000);
 
     /* Simulation */
-    piston->updatePosition(FRAMETIME / 1000.f, engineSpeed);
+    for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
+      piston->updatePosition(FRAMETIME / (1000.f * SIMULATION_MULTIPLIER),
+                             engineSpeed);
+    }
+
     /* Log Data */
     pistonPosLogger->addSample(piston->getPistonPosition());
-    exhaustValveLog->addSample(piston->exhaustValve);
-    intakeValveLog->addSample(piston->intakeValve);
+    pressureLogger->addSample(piston->gas->getP());
     if (piston->cycleTrigger) {
       pistonPosLogger->trig();
-      exhaustValveLog->trig();
-      intakeValveLog->trig();
+      pressureLogger->trig();
       piston->cycleTrigger = false;
     }
 
@@ -59,19 +63,23 @@ int main() {
     ImGui::NewFrame();
 
     ImGui::Begin("Test");
-    ImGui::Text("Framerate: %.2f fps", fVis->getFramerate());
+    ImGui::Text("Framerate: %.1f fps", fVis->getFramerate());
+    ImGui::Text("Load:      %.2f", 100.f * load->getLast() / FRAMETIME);
+    ImGui::Text("Simul:     %.0f Hz",
+                fVis->getFramerate() * SIMULATION_MULTIPLIER);
+
     ImGui::InputFloat("Frametime [ms]", &FRAMETIME, 0, 0, "%.0f", 0);
-    ImGui::PlotLines("Framerate [fps]", fVis->getData(), fVis->getSize());
+    ImGui::InputInt("Multiplier: ", &SIMULATION_MULTIPLIER);
     ImGui::InputFloat("Engine speed", &engineSpeed, 0, 0, "%.0f", 0);
     ImGui::PlotLines("Piston Position", pistonPosLogger->getData(),
                      pistonPosLogger->getSize());
-    ImGui::PlotLines("Intake Valve", intakeValveLog->getData(),
-                     intakeValveLog->getSize());
-    ImGui::PlotLines("Exhaust Valve", exhaustValveLog->getData(),
-                     exhaustValveLog->getSize());
-    if (ImGui::Button("Quit")) {
-      game->QuitGame();
-    };
+    ImGui::PlotLines("Pressure", pressureLogger->getData(),
+                     pressureLogger->getSize());
+    ImGui::Text("Pressure:    %.0f Pa (%.2f atm)", piston->gas->getP(),
+                PAToATM(piston->gas->getP()));
+    ImGui::Text("Volume:      %.2f cc", M3_TO_CC(piston->gas->getV()));
+    ImGui::Text("Temperature: %.2f K (%.0f °C)", piston->gas->getT(),
+                KELVToCELS(piston->gas->getT()));
     ImGui::End();
 
     /* Rendering */
@@ -80,6 +88,8 @@ int main() {
     game->RenderClear();
 
     pistonGraphics->showPiston(game->renderer);
+
+    load->endClock();
 
     /* Wait for next frame */
     int delay = FRAMETIME - (SDL_GetTicks() - timeStart);

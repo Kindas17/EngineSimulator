@@ -24,12 +24,7 @@ Piston::Piston(CylinderGeometry geometryInfo) {
   this->geometry = geometryInfo;
 
   /* Dynamics */
-  internalTime = 0;
-  headAngle = 0;                     /* Deg */
   currentAngle = headAngle * 2 + 90; /* Deg */
-  omega = 20 * 2 * M_PI;             /* Rad/s */
-  intakeValve = 0;
-  exhaustValve = 0;
 
   minThrottle = 0.0075;
   throttle = 0;
@@ -37,19 +32,21 @@ Piston::Piston(CylinderGeometry geometryInfo) {
   ignitionOn = false;
   combustionAdvance = 7.5;
 
-  /* Thermodynamics */
-  gas = new IdealGas(DEFAULT_AMBIENT_PRESSURE, getChamberVolume(), 300.f);
-
   /* Initial update to initialize the piston status */
   rodFoot = {.x = +(geometry.stroke / 2) * cosf(DEGToRAD(currentAngle)),
              .y = -(geometry.stroke / 2) * sinf(DEGToRAD(currentAngle))};
+
+  /* Thermodynamics */
+  gas = new IdealGas(DEFAULT_AMBIENT_PRESSURE, getChamberVolume(), 300.f);
 }
 
 void Piston::updatePosition(float deltaT, float setSpeed) {
   const float previousHeadAngle = headAngle;
   headAngle +=
       RADToDEG(omega) * deltaT / 2; /* Head crank rotates at half the speed */
+
   currentAngle = headAngle * 2 + 90;
+
   /* Angle Wrapping */
   currentAngle = angleWrapper(currentAngle);
   headAngle = angleWrapper(headAngle);
@@ -75,11 +72,12 @@ void Piston::updatePosition(float deltaT, float setSpeed) {
   updateStatus(deltaT);
 }
 
-void Piston::applyExtTorque(float torque) { externalTorque = torque; }
-
 void Piston::updateStatus(float deltaT) {
   /* Valve Status Update */
   ValveMgm();
+
+  /* Thermodynamics */
+  gas->AdiabaticCompress(V_prime, deltaT);
 
   // /* Combustion advance adjusting */
   // // combustionAdvance = (RADSToRPM(omega) < 2500) ? 7.5 * RADSToRPM(omega) /
@@ -117,6 +115,8 @@ void Piston::updateStatus(float deltaT) {
   //     internalTime = 0;
   // }
 }
+
+void Piston::applyExtTorque(float torque) { externalTorque = torque; }
 
 void Piston::ValveMgm() {
   /* Intake Profile */

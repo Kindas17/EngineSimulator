@@ -13,11 +13,16 @@ public:
 
   IdealGas(float p, float v, float t);
 
+  /* Ideal process */
+  void AdiabaticCompress(float vprime, float dt);
+
 private:
   float pressure;
   float volume;
   float nR;
   float temperature;
+
+  const float alpha = 5.f/2.f;
 };
 
 #endif
