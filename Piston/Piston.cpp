@@ -78,8 +78,10 @@ void Piston::updateStatus(float deltaT) {
 
   /* Thermodynamics */
   gas->AdiabaticCompress(V_prime, deltaT);
-  gas->SimpleFlow(0.0001f * intakeValve, DEFAULT_AMBIENT_PRESSURE, deltaT);
-  gas->SimpleFlow(0.0001f * exhaustValve, DEFAULT_AMBIENT_PRESSURE, deltaT);
+  gas->SimpleFlow(0.0001f * intakeValve, DEFAULT_AMBIENT_PRESSURE,
+                  DEFAULT_AMBIENT_TEMPERATURE, deltaT);
+  gas->SimpleFlow(0.0001f * exhaustValve, DEFAULT_AMBIENT_PRESSURE,
+                  DEFAULT_AMBIENT_TEMPERATURE, deltaT);
 
   // /* Combustion advance adjusting */
   // // combustionAdvance = (RADSToRPM(omega) < 2500) ? 7.5 * RADSToRPM(omega) /

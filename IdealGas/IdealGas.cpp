@@ -23,10 +23,10 @@ void IdealGas::AdiabaticCompress(float vprime, float dt) {
   temperature = pressure * volume / nR;
 }
 
-void IdealGas::SimpleFlow(float kFlow, float ext_pressure, float dt) {
+void IdealGas::SimpleFlow(float kFlow, float ext_pressure, float ext_temp,
+                          float dt) {
 
-  /* p(t) = c1 * exp(-a k t) + b */
-
+  /* SIMPLIFIED VERSION - TEMPERATURE VARIATION */
   /* Compute the pressure variation */
   const float a = temperature / volume;
   const float b = ext_pressure;
@@ -37,8 +37,32 @@ void IdealGas::SimpleFlow(float kFlow, float ext_pressure, float dt) {
   const float deltaP = (b - p0);
   const float nrPrime = kFlow * deltaP;
 
+  const float tout = ext_temp;
+  const float t0 = temperature;
+  const float nr0 = nR;
+
   /* Update the status */
   pressure = p;
   nR += nrPrime * dt;
-  temperature = pressure * volume / nR;
+
+  const float adjT = pressure * volume / nR;
+  const float t = (dt * nrPrime * tout + nr0 * adjT) / nR;
+
+  temperature = t;
+
+  /* SIMPLIFIED VERSION - NO TEMPERATURE VARIATION */
+  // /* Compute the pressure variation */
+  // const float a = temperature / volume;
+  // const float b = ext_pressure;
+  // const float p0 = pressure;
+  // const float c1 = p0 - b;
+  // const float p = c1 * std::exp(-a * kFlow * dt) + b;
+
+  // const float deltaP = (b - p0);
+  // const float nrPrime = kFlow * deltaP;
+
+  // /* Update the status */
+  // pressure = p;
+  // nR += nrPrime * dt;
+  // temperature = pressure * volume / nR;
 }
