@@ -6,11 +6,13 @@
 #include <iomanip>
 #include <iostream>
 
-int SIMULATION_MULTIPLIER = 1000;
+int SIMULATION_MULTIPLIER = 200;
 float FRAMETIME = 20.f; /* ms */
 float pistonX = 350.f;
 float pistonY = 550.f;
 float engineSpeed = 0.f;
+
+float externalTorque = 0.f;
 
 int main() {
   printf("Program started\n");
@@ -23,6 +25,8 @@ int main() {
   Piston *piston = new Piston(*geom);
   CycleLogger *pistonPosLogger = new CycleLogger();
   CycleLogger *pressureLogger = new CycleLogger();
+  CycleLogger *intakeLog = new CycleLogger();
+  CycleLogger *exhaustLog = new CycleLogger();
 
   printf("Game initialized\n");
 
@@ -47,15 +51,22 @@ int main() {
     for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
       piston->updatePosition(FRAMETIME / (1000.f * SIMULATION_MULTIPLIER),
                              engineSpeed);
-    }
+      
+      piston->applyExtTorque(externalTorque);
 
-    /* Log Data */
-    pistonPosLogger->addSample(piston->getPistonPosition());
-    pressureLogger->addSample(piston->gas->getP());
-    if (piston->cycleTrigger) {
-      pistonPosLogger->trig();
-      pressureLogger->trig();
-      piston->cycleTrigger = false;
+      /* Log Data */
+      pistonPosLogger->addSample(piston->getPistonPosition());
+      pressureLogger->addSample(piston->gas->getP());
+      intakeLog->addSample(piston->intakeFlow);
+      exhaustLog->addSample(piston->exhaustFlow);
+
+      if (piston->cycleTrigger) {
+        pistonPosLogger->trig();
+        pressureLogger->trig();
+        intakeLog->trig();
+        exhaustLog->trig();
+        piston->cycleTrigger = false;
+      }
     }
 
     ImGui_ImplSDLRenderer2_NewFrame();
@@ -69,24 +80,30 @@ int main() {
     ImGui::Text("Simul:     %.0f Hz",
                 fVis->getFramerate() * SIMULATION_MULTIPLIER);
 
-    ImGui::InputFloat("Frametime [ms]", &FRAMETIME, 0, 0, "%.0f", 0);
-    ImGui::InputInt("Multiplier: ", &SIMULATION_MULTIPLIER);
-    ImGui::InputFloat("Engine speed", &engineSpeed, 0, 0, "%.0f", 0);
-    ImGui::PlotLines("Piston Position", pistonPosLogger->getData(),
-                     pistonPosLogger->getSize());
+    // ImGui::InputFloat("Frametime [ms]", &FRAMETIME, 0, 0, "%.0f", 0);
+    // ImGui::InputInt("Multiplier: ", &SIMULATION_MULTIPLIER);
+    // ImGui::InputFloat("Engine speed", &engineSpeed, 0, 0, "%.0f", 0);
     ImGui::PlotLines("Pressure", pressureLogger->getData(),
                      pressureLogger->getSize());
+    ImGui::PlotLines("Intake", intakeLog->getData(), intakeLog->getSize());
+    ImGui::PlotLines("Exhaust", exhaustLog->getData(), exhaustLog->getSize());
     ImGui::Text("Pressure:    %.0f Pa (%.2f atm)", piston->gas->getP(),
                 PAToATM(piston->gas->getP()));
     ImGui::Text("Volume:      %.2f cc", M3_TO_CC(piston->gas->getV()));
     ImGui::Text("Temperature: %.2f K (%.0f °C)", piston->gas->getT(),
                 KELVToCELS(piston->gas->getT()));
-    
+
+    ImGui::SliderFloat("Torque", &externalTorque, 0.f, 50.f);
     ImGui::Checkbox("Activate dynamics", &piston->dynamicsIsActive);
     ImGui::End();
 
+    ImGui::Begin("Test2");
+    ImGui::InputFloat("Engine speed", &engineSpeed, 0, 0, "%.0f", 0);
+    ImGui::End();
+  
     /* Rendering */
     ImGui::Render();
+
     game->handleEvents();
     game->RenderClear();
 

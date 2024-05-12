@@ -38,6 +38,8 @@ Piston::Piston(CylinderGeometry geometryInfo) {
 
   /* Thermodynamics */
   gas = new IdealGas(DEFAULT_AMBIENT_PRESSURE, getChamberVolume(), 300.f);
+
+  dynamicsIsActive = true;
 }
 
 void Piston::updatePosition(float deltaT, float setSpeed) {
@@ -78,46 +80,12 @@ void Piston::updateStatus(float deltaT) {
 
   /* Thermodynamics */
   gas->AdiabaticCompress(V_prime, deltaT);
-  gas->SimpleFlow(0.0001f * intakeValve, DEFAULT_AMBIENT_PRESSURE,
-                  DEFAULT_AMBIENT_TEMPERATURE, deltaT);
-  gas->SimpleFlow(0.0001f * exhaustValve, DEFAULT_AMBIENT_PRESSURE,
-                  DEFAULT_AMBIENT_TEMPERATURE, deltaT);
-
-  // /* Combustion advance adjusting */
-  // // combustionAdvance = (RADSToRPM(omega) < 2500) ? 7.5 * RADSToRPM(omega) /
-  // 2500 : 7.5;
-
-  // const float intake_k_flow = intakeValve * (throttle * (1 - minThrottle) +
-  // minThrottle);
-
-  // intakeFlow = intakeOri.flow(intake_k_flow * 0.2f * thermo.gas.nR,
-  // thermo.gas.P); exhaustFlow = exhaustOri.flow(exhaustValve * 0.2f *
-  // thermo.gas.nR, thermo.gas.P); const float nR_prime = intakeFlow +
-  // exhaustFlow;
-
-  // thermo.update(deltaT, nR_prime, V_prime, 300, 0);
-
-  // // /* Thermodynamics Status Update */
-  // // thermo.adiabatic(getChamberVolume());
-
-  // // const float coef = 40.0f;
-  // // const float throttleCoef = ((1-minThrottle)*throttle + minThrottle);
-  // // const float intake_k_flow = intakeValve * throttleCoef * coef;
-
-  // // intakeFlow = thermo.orificeFlow(deltaT, intake_k_flow, 0.25, 300,
-  // 101325, 1);
-  // // exhaustFlow = thermo.orificeFlow(deltaT, exhaustValve * coef, 0.25, 300,
-  // 101325, 0);
-  // // leakageFlow = thermo.orificeFlow(deltaT, 0.00001f * coef, 0.01, 300,
-  // 101325, 0);
-
-  // if (ignitionOn && (headAngle >= 180-combustionAdvance))
-  // {
-  //     // thermo.combustion(deltaT, internalTime);
-  //     internalTime += deltaT;
-  // } else {
-  //     internalTime = 0;
-  // }
+  intakeFlow = gas->SimpleFlow(0.0001f * intakeValve, DEFAULT_AMBIENT_PRESSURE,
+                               DEFAULT_AMBIENT_TEMPERATURE, deltaT);
+  exhaustFlow =
+      gas->SimpleFlow(0.0001f * exhaustValve, DEFAULT_AMBIENT_PRESSURE,
+                      DEFAULT_AMBIENT_TEMPERATURE, deltaT);
+  gas->HeatExchange(0.05f, DEFAULT_AMBIENT_TEMPERATURE, deltaT);
 }
 
 void Piston::applyExtTorque(float torque) { externalTorque = torque; }

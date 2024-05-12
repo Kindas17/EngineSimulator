@@ -16,7 +16,8 @@ public:
 
   /* Ideal process */
   void AdiabaticCompress(float vprime, float dt);
-  void SimpleFlow(float kFlow, float ext_pressure, float ext_temp, float dt);
+  float SimpleFlow(float kFlow, float ext_pressure, float ext_temp, float dt);
+  void HeatExchange(float kTherm, float ext_temp, float dt);
 
 private:
   float pressure;
