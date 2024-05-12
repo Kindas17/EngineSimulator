@@ -4,14 +4,14 @@
 #include <stdio.h>
 #include "IdealGas.hpp"
 
-#define DEGToRAD(X) (2.0 * M_PI * X / 360.0)
-#define RADToDEG(X) (360.0 * X / (2 * M_PI))
-#define RADSToHZ(X) (X / (2 * M_PI))
-#define RADSToRPM(X) (60.0 * RADSToHZ(X))
-#define M3_TO_CC(X) (1000000 * X)
-#define MM_TO_M(X) (X / 1000.0)
-#define PAToATM(X) (X / 101325.0)
-#define KELVToCELS(X) (X - 273)
+#define DEGToRAD(X) (2.0 * M_PI * (X) / 360.0)
+#define RADToDEG(X) (360.0 * (X) / (2 * M_PI))
+#define RADSToHZ(X) ((X) / (2 * M_PI))
+#define RADSToRPM(X) (60.0 * RADSToHZ((X)))
+#define M3_TO_CC(X) (1000000 * (X))
+#define MM_TO_M(X) ((X) / 1000.0)
+#define PAToATM(X) ((X) / 101325.0)
+#define KELVToCELS(X) ((X) - 273)
 
 class CylinderGeometry {
 public:

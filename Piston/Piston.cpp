@@ -176,15 +176,15 @@ float Piston::getThetaAngle() {
 }
 
 float Piston::getTorque() {
-  // const float pistonSurface = (geometry.bore * geometry.bore * M_PI * 0.25);
-  // const float topPistonPressure = thermo.gas.P;
-  // const float force = pistonSurface * (topPistonPressure - 101325) *
-  // cosf(getThetaAngle());
+  const float pistonSurface = (geometry.bore * geometry.bore * M_PI * 0.25);
+  const float topPistonPressure = gas->getP(); // thermo.gas.P;
+  const float force =
+      pistonSurface * (topPistonPressure - 101325) * std::cos(getThetaAngle());
 
-  // const float friction = -omega * 0.01;
-  // const float absTorque = (force * geometry.stroke) / 2;
+  const float friction = -omega * 0.05f;
+  const float absTorque = (force * geometry.stroke) / 2;
 
-  // return (getThetaAngle() < 0) ? absTorque+friction : -absTorque+friction;
+  return (getThetaAngle() < 0) ? absTorque + friction : -absTorque + friction;
   return 0.f;
 }
 
