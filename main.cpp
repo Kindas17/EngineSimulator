@@ -80,6 +80,10 @@ int main() {
     ImGui::Text("Volume:      %.2f cc", M3_TO_CC(piston->gas->getV()));
     ImGui::Text("Temperature: %.2f K (%.0f °C)", piston->gas->getT(),
                 KELVToCELS(piston->gas->getT()));
+    ImGui::Text("nR:          %.2f", piston->gas->getnR());
+
+    ImGui::Text("Intake:  %.1f", piston->intakeValve);
+    ImGui::Text("Exhaust: %.1f", piston->exhaustValve);
     ImGui::End();
 
     /* Rendering */
