@@ -1,1 +1,11 @@
-add_library(Logger Logger.cpp)
+add_library(Logger)
+
+target_sources(Logger
+	PRIVATE
+	Logger.cpp
+)
+
+target_include_directories(Logger
+	PUBLIC
+	${CMAKE_CURRENT_SOURCE_DIR}
+)

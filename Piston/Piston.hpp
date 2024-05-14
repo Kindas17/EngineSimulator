@@ -2,11 +2,12 @@
 #define PISTON_HPP
 #include "Linalg.hpp"
 #include <stdio.h>
+#include <numbers>
 #include "IdealGas.hpp"
 
-#define DEGToRAD(X) (2.0 * M_PI * (X) / 360.0)
-#define RADToDEG(X) (360.0 * (X) / (2 * M_PI))
-#define RADSToHZ(X) ((X) / (2 * M_PI))
+#define DEGToRAD(X) (2.0 * std::numbers::pi * (X) / 360.0)
+#define RADToDEG(X) (360.0 * (X) / (2 * std::numbers::pi))
+#define RADSToHZ(X) ((X) / (2 * std::numbers::pi))
 #define RADSToRPM(X) (60.0 * RADSToHZ((X)))
 #define M3_TO_CC(X) (1000000 * (X))
 #define MM_TO_M(X) ((X) / 1000.0)

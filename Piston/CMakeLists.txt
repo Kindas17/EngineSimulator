@@ -1,10 +1,18 @@
-add_library(Piston Piston.cpp PistonGraphics.cpp)
+add_library(Piston)
 
-include_directories(
-    ${CMAKE_SOURCE_DIR}/IdealGas
+target_sources(Piston
+    PRIVATE
+    Piston.cpp
+    PistonGraphics.cpp
+)
+
+target_include_directories(Piston
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 target_link_libraries(Piston
     PRIVATE
     IdealGas
+    SDL2::SDL2
 )

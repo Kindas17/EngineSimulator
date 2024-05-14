@@ -16,11 +16,11 @@ inline float dotProduct(vector2_T arr1, vector2_T arr2) {
 }
 
 inline vector2_T subVec(vector2_T arr1, vector2_T arr2) {
-  return (vector2_T){.x = arr1.x - arr2.x, .y = arr1.y - arr2.y};
+  return vector2_T{.x = arr1.x - arr2.x, .y = arr1.y - arr2.y};
 }
 
 inline vector2_T addVec(vector2_T arr1, vector2_T arr2) {
-  return (vector2_T){.x = (arr1.x + arr2.x), .y = (arr1.y + arr2.y)};
+  return vector2_T{.x = (arr1.x + arr2.x), .y = (arr1.y + arr2.y)};
 }
 
 inline float squareVector(vector2_T vector) {
@@ -28,7 +28,7 @@ inline float squareVector(vector2_T vector) {
 }
 
 inline vector2_T scalarProductVec(vector2_T arr1, float scalar) {
-  return (vector2_T){.x = arr1.x * scalar, .y = arr1.y * scalar};
+  return vector2_T{.x = arr1.x * scalar, .y = arr1.y * scalar};
 }
 
 inline float getDistance(vector2_T pos1, vector2_T pos2) {

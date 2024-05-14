@@ -6,12 +6,8 @@ set (CMAKE_CXX_STANDARD 20)
 
 add_executable(tutorial main.cpp Game.cpp)
 
-find_package(SDL2 CONFIG REQUIRED)
-target_link_libraries(tutorial SDL2)
-
-find_package(imgui CONFIG REQUIRED)
-target_link_libraries(tutorial imgui::imgui)
-
+find_package(SDL2 REQUIRED)
+find_package(imgui REQUIRED)
 
 # My libraries
 
@@ -19,12 +15,13 @@ add_subdirectory(Piston)
 add_subdirectory(Logger)
 add_subdirectory(IdealGas)
 
-target_include_directories(tutorial
-                           PRIVATE Piston
-                           PRIVATE Logger
-                           PRIVATE IdealGas
-)
+target_link_libraries(tutorial
+	PRIVATE
+	Piston
+	Logger
+	IdealGas
 
-target_link_libraries(tutorial Piston)
-target_link_libraries(tutorial Logger)
-target_link_libraries(tutorial IdealGas)
+	imgui::imgui
+	SDL2::SDL2
+	SDL2::SDL2main
+)

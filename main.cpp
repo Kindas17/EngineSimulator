@@ -14,11 +14,11 @@ float engineSpeed = 0.f;
 
 float externalTorque = 0.f;
 
-int main() {
+int main(int argc, char* argv[]) {
   printf("Program started\n");
 
   /* Game initialization */
-  Game *game = new Game("Engine Simulator", 0, 0, 700, 700);
+  Game *game = new Game("Engine Simulator", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 700, 700);
   FrameRVis *fVis = new FrameRVis();
   FrameRVis *load = new FrameRVis();
   CylinderGeometry *geom = new CylinderGeometry();
@@ -45,7 +45,7 @@ int main() {
     load->startClock();
     const int timeStart = SDL_GetTicks();
     PistonGraphics *pistonGraphics = new PistonGraphics(
-        (vector2_T){.x = pistonX, .y = pistonY}, piston, 2000);
+        vector2_T{.x = pistonX, .y = pistonY}, piston, 2000);
 
     /* Simulation */
     for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
@@ -70,7 +70,7 @@ int main() {
     }
 
     ImGui_ImplSDLRenderer2_NewFrame();
-    ImGui_ImplSDL2_NewFrame(game->window);
+    ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
     ImGui::Begin("Test");

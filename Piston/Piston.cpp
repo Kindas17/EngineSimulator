@@ -1,4 +1,6 @@
 #include "Piston.hpp"
+#include <cmath>
+#include <numbers>
 
 #define CRANKSHAFT_L (25.0)           /* [mm] */
 #define BIELLA_L (55.0)               /* [mm] */
@@ -19,7 +21,7 @@ inline float adiabaticCompression(float initialVolume, float initialPressure,
   return initialPressure * powf((initialVolume / currentVolume), 7.0 / 5.0);
 }
 
-Piston::Piston(CylinderGeometry geometryInfo) {
+Piston::Piston(CylinderGeometry geometryInfo) : omega{}, headAngle{}, externalTorque{} {
   /* Piston Geometry */
   this->geometry = geometryInfo;
 
@@ -120,24 +122,24 @@ float Piston::getCyclePercent() {
 
 float Piston::getChamberVolume() {
   const float constantVol =
-      geometry.bore * geometry.bore * M_PI * 0.25 * geometry.addStroke;
-  return (1 - getCyclePercent()) * M_PI * geometry.bore * geometry.bore *
+      geometry.bore * geometry.bore * std::numbers::pi * 0.25 * geometry.addStroke;
+  return (1 - getCyclePercent()) * std::numbers::pi * geometry.bore * geometry.bore *
              geometry.stroke * 0.25 +
          constantVol;
 }
 
 float Piston::getMaxVolume() {
-  return M_PI * (geometry.bore) * (geometry.bore) *
+  return std::numbers::pi * (geometry.bore) * (geometry.bore) *
          (geometry.addStroke + geometry.stroke) * 0.25;
 }
 
 float Piston::getEngineVolume() {
-  return M_PI * (geometry.bore) * (geometry.bore) * (geometry.stroke) * 0.25;
+  return std::numbers::pi * (geometry.bore) * (geometry.bore) * (geometry.stroke) * 0.25;
 }
 
 float Piston::getCompressionRatio() {
   return getMaxVolume() /
-         (geometry.bore * geometry.bore * M_PI * 0.25 * geometry.addStroke);
+         (geometry.bore * geometry.bore * std::numbers::pi * 0.25 * geometry.addStroke);
 }
 
 float Piston::getThetaAngle() {
@@ -146,7 +148,7 @@ float Piston::getThetaAngle() {
 }
 
 float Piston::getTorque() {
-  const float pistonSurface = (geometry.bore * geometry.bore * M_PI * 0.25);
+  const float pistonSurface = (geometry.bore * geometry.bore * std::numbers::pi * 0.25);
   const float topPistonPressure = gas->getP(); // thermo.gas.P;
   const float force =
       pistonSurface * (topPistonPressure - 101325) * std::cos(getThetaAngle());
