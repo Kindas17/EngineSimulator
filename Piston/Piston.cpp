@@ -52,10 +52,6 @@ void Piston::updatePosition(float deltaT, float setSpeed) {
   currentAngle = angleWrapper(currentAngle);
   headAngle = angleWrapper(headAngle);
 
-  if (previousHeadAngle > headAngle) {
-    cycleTrigger = true;
-  }
-
   const float prevV = getChamberVolume();
 
   /* Update rod foot position */
@@ -68,6 +64,17 @@ void Piston::updatePosition(float deltaT, float setSpeed) {
     omega += deltaT * (getTorque() + externalTorque) / geometry.momentOfInertia;
   } else {
     omega = setSpeed;
+  }
+
+  /* Check if the spark plug has triggered */
+  if (previousHeadAngle < combustionAdvance + 180 && headAngle > combustionAdvance + 180) {
+    combustionInProgress = true;
+  }
+
+  /* A full cycle of the engine has terminated */
+  if (previousHeadAngle > headAngle) {
+    cycleTrigger = true;
+    combustionInProgress = false;
   }
 
   updateStatus(deltaT);
@@ -86,6 +93,11 @@ void Piston::updateStatus(float deltaT) {
       gas->SimpleFlow(0.0001f * exhaustValve, DEFAULT_AMBIENT_PRESSURE,
                       DEFAULT_AMBIENT_TEMPERATURE, deltaT);
   gas->HeatExchange(0.05f, DEFAULT_AMBIENT_TEMPERATURE, deltaT);
+
+  if (combustionInProgress) {
+    gas->InjectHeat(energyInject, deltaT);
+    combustionInProgress = false;
+  }
 }
 
 void Piston::applyExtTorque(float torque) { externalTorque = torque; }

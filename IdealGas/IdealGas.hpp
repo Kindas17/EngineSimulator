@@ -21,7 +21,7 @@ public:
   void AdiabaticCompress(float vprime, float dt);
   float SimpleFlow(float kFlow, float ext_pressure, float ext_temp, float dt);
   void HeatExchange(float kTherm, float ext_temp, float dt);
-  void InjectHeat(float amount, float dt);
+  void InjectHeat(float qprime, float dt);
 
 private:
   float pressure;

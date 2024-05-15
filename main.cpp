@@ -95,13 +95,14 @@ int main(int argc, char *argv[]) {
                 KELVToCELS(piston->gas->getT()));
 
     ImGui::SliderFloat("Torque", &externalTorque, 0.f, 50.f);
+    ImGui::SliderFloat("Throttle", &piston->throttle, 0.f, 1.f);
     ImGui::End();
 
     ImGui::Begin("Test2");
     ImGui::InputFloat("Engine speed", &engineSpeed, 0, 0, "%.0f", 0);
+    ImGui::InputFloat("Combustion Energy", &piston->energyInject, 0, 0, "%.0f", 0);
     ImGui::Checkbox("Activate dynamics", &piston->dynamicsIsActive);
     ImGui::Checkbox("Ignition", &piston->ignitionOn);
-    ImGui::Text("Combustion in progress %d", piston->combustionInProgress);
     ImGui::End();
 
     /* Rendering */

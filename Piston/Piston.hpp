@@ -68,6 +68,7 @@ public:
   float V_prime;
   IdealGas *gas;
   bool combustionInProgress;
+  float energyInject;
 
   /* Valves */
   float intakeValve;
