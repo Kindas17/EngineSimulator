@@ -6,6 +6,8 @@ set (CMAKE_CXX_STANDARD 20)
 
 add_executable(tutorial main.cpp Game.cpp)
 
+add_compile_options(-Wall -Wextra -O3) 
+
 find_package(SDL2 REQUIRED)
 find_package(imgui REQUIRED)
 

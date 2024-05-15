@@ -1,18 +1,20 @@
 #ifndef PISTON_HPP
 #define PISTON_HPP
-#include "Linalg.hpp"
-#include <stdio.h>
-#include <numbers>
 #include "IdealGas.hpp"
+#include "Linalg.hpp"
+#include <numbers>
+#include <stdio.h>
 
-#define DEGToRAD(X) (2.0 * std::numbers::pi * (X) / 360.0)
-#define RADToDEG(X) (360.0 * (X) / (2 * std::numbers::pi))
-#define RADSToHZ(X) ((X) / (2 * std::numbers::pi))
-#define RADSToRPM(X) (60.0 * RADSToHZ((X)))
-#define M3_TO_CC(X) (1000000 * (X))
-#define MM_TO_M(X) ((X) / 1000.0)
-#define PAToATM(X) ((X) / 101325.0)
-#define KELVToCELS(X) ((X) - 273)
+constexpr float DEGToRAD(float X) {
+  return (2.0 * std::numbers::pi * (X) / 360.0);
+}
+constexpr float RADToDEG(float X) {
+  return (360.0 * (X) / (2 * std::numbers::pi));
+}
+constexpr float RADSToHZ(float X) { return ((X) / (2 * std::numbers::pi)); }
+constexpr float RADSToRPM(float X) { return (60.0 * RADSToHZ((X))); }
+constexpr float M3ToCC(float X) { return (1000000 * (X)); }
+constexpr float MMToM(float X) { return ((X) / 1000.0); }
 
 class CylinderGeometry {
 public:
@@ -63,7 +65,7 @@ public:
 
   /* Thermodynamics */
   float V_prime;
-  IdealGas* gas;
+  IdealGas *gas;
 
   /* Valves */
   float intakeValve;

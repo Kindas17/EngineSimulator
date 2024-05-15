@@ -14,11 +14,12 @@ float engineSpeed = 0.f;
 
 float externalTorque = 0.f;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   printf("Program started\n");
 
   /* Game initialization */
-  Game *game = new Game("Engine Simulator", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 700, 700);
+  Game *game = new Game("Engine Simulator", SDL_WINDOWPOS_UNDEFINED,
+                        SDL_WINDOWPOS_UNDEFINED, 700, 700);
   FrameRVis *fVis = new FrameRVis();
   FrameRVis *load = new FrameRVis();
   CylinderGeometry *geom = new CylinderGeometry();
@@ -44,14 +45,14 @@ int main(int argc, char* argv[]) {
     fVis->startClock();
     load->startClock();
     const int timeStart = SDL_GetTicks();
-    PistonGraphics *pistonGraphics = new PistonGraphics(
-        vector2_T{.x = pistonX, .y = pistonY}, piston, 2000);
+    PistonGraphics *pistonGraphics =
+        new PistonGraphics(vector2_T{.x = pistonX, .y = pistonY}, piston, 2000);
 
     /* Simulation */
     for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
       piston->updatePosition(FRAMETIME / (1000.f * SIMULATION_MULTIPLIER),
                              engineSpeed);
-      
+
       piston->applyExtTorque(externalTorque);
 
       /* Log Data */
@@ -89,18 +90,19 @@ int main(int argc, char* argv[]) {
     ImGui::PlotLines("Exhaust", exhaustLog->getData(), exhaustLog->getSize());
     ImGui::Text("Pressure:    %.0f Pa (%.2f atm)", piston->gas->getP(),
                 PAToATM(piston->gas->getP()));
-    ImGui::Text("Volume:      %.2f cc", M3_TO_CC(piston->gas->getV()));
+    ImGui::Text("Volume:      %.2f cc", M3ToCC(piston->gas->getV()));
     ImGui::Text("Temperature: %.2f K (%.0f °C)", piston->gas->getT(),
                 KELVToCELS(piston->gas->getT()));
 
     ImGui::SliderFloat("Torque", &externalTorque, 0.f, 50.f);
-    ImGui::Checkbox("Activate dynamics", &piston->dynamicsIsActive);
     ImGui::End();
 
     ImGui::Begin("Test2");
     ImGui::InputFloat("Engine speed", &engineSpeed, 0, 0, "%.0f", 0);
+    ImGui::Checkbox("Activate dynamics", &piston->dynamicsIsActive);
+    ImGui::Checkbox("Ignition", &piston->ignitionOn);
     ImGui::End();
-  
+
     /* Rendering */
     ImGui::Render();
 

@@ -2,9 +2,9 @@
 #include <cmath>
 #include <numbers>
 
-#define CRANKSHAFT_L (25.0)           /* [mm] */
-#define BIELLA_L (55.0)               /* [mm] */
-#define ADD_STROKE (CRANKSHAFT_L / 3) /* No Unit */
+constexpr float CRANKSHAFT_L = 25.0f;            /* [mm] */
+constexpr float BIELLA_L = 55.0f;                /* [mm] */
+constexpr float ADD_STROKE = CRANKSHAFT_L / 3.f; /* No Unit */
 
 inline float angleWrapper(float angle) {
   while (angle > 360) {
@@ -16,23 +16,19 @@ inline float angleWrapper(float angle) {
   return angle;
 }
 
-inline float adiabaticCompression(float initialVolume, float initialPressure,
-                                  float currentVolume) {
-  return initialPressure * powf((initialVolume / currentVolume), 7.0 / 5.0);
-}
-
-Piston::Piston(CylinderGeometry geometryInfo) : omega{}, headAngle{}, externalTorque{} {
+Piston::Piston(CylinderGeometry geometryInfo)
+    : omega{}, headAngle{}, externalTorque{} {
   /* Piston Geometry */
   this->geometry = geometryInfo;
 
   /* Dynamics */
   currentAngle = headAngle * 2 + 90; /* Deg */
 
-  minThrottle = 0.0075;
-  throttle = 0;
+  minThrottle = 0.0075f;
+  throttle = 0.f;
 
   ignitionOn = false;
-  combustionAdvance = 7.5;
+  combustionAdvance = 7.5f;
 
   /* Initial update to initialize the piston status */
   rodFoot = {.x = +(geometry.stroke / 2) * cosf(DEGToRAD(currentAngle)),
@@ -82,7 +78,8 @@ void Piston::updateStatus(float deltaT) {
 
   /* Thermodynamics */
   gas->AdiabaticCompress(V_prime, deltaT);
-  intakeFlow = gas->SimpleFlow(0.0001f * intakeValve, DEFAULT_AMBIENT_PRESSURE,
+  intakeFlow = gas->SimpleFlow(throttle * 0.0001f * intakeValve,
+                               DEFAULT_AMBIENT_PRESSURE,
                                DEFAULT_AMBIENT_TEMPERATURE, deltaT);
   exhaustFlow =
       gas->SimpleFlow(0.0001f * exhaustValve, DEFAULT_AMBIENT_PRESSURE,
@@ -121,10 +118,10 @@ float Piston::getCyclePercent() {
 }
 
 float Piston::getChamberVolume() {
-  const float constantVol =
-      geometry.bore * geometry.bore * std::numbers::pi * 0.25 * geometry.addStroke;
-  return (1 - getCyclePercent()) * std::numbers::pi * geometry.bore * geometry.bore *
-             geometry.stroke * 0.25 +
+  const float constantVol = geometry.bore * geometry.bore * std::numbers::pi *
+                            0.25 * geometry.addStroke;
+  return (1 - getCyclePercent()) * std::numbers::pi * geometry.bore *
+             geometry.bore * geometry.stroke * 0.25 +
          constantVol;
 }
 
@@ -134,12 +131,13 @@ float Piston::getMaxVolume() {
 }
 
 float Piston::getEngineVolume() {
-  return std::numbers::pi * (geometry.bore) * (geometry.bore) * (geometry.stroke) * 0.25;
+  return std::numbers::pi * (geometry.bore) * (geometry.bore) *
+         (geometry.stroke) * 0.25;
 }
 
 float Piston::getCompressionRatio() {
-  return getMaxVolume() /
-         (geometry.bore * geometry.bore * std::numbers::pi * 0.25 * geometry.addStroke);
+  return getMaxVolume() / (geometry.bore * geometry.bore * std::numbers::pi *
+                           0.25 * geometry.addStroke);
 }
 
 float Piston::getThetaAngle() {
@@ -148,7 +146,8 @@ float Piston::getThetaAngle() {
 }
 
 float Piston::getTorque() {
-  const float pistonSurface = (geometry.bore * geometry.bore * std::numbers::pi * 0.25);
+  const float pistonSurface =
+      (geometry.bore * geometry.bore * std::numbers::pi * 0.25);
   const float topPistonPressure = gas->getP(); // thermo.gas.P;
   const float force =
       pistonSurface * (topPistonPressure - 101325) * std::cos(getThetaAngle());
@@ -161,9 +160,9 @@ float Piston::getTorque() {
 }
 
 CylinderGeometry::CylinderGeometry() {
-  stroke = MM_TO_M(CRANKSHAFT_L * 2);
-  addStroke = MM_TO_M(ADD_STROKE);
-  rod = MM_TO_M(BIELLA_L);
-  bore = MM_TO_M(50.6);
+  stroke = MMToM(CRANKSHAFT_L * 2.f);
+  addStroke = MMToM(ADD_STROKE);
+  rod = MMToM(BIELLA_L);
+  bore = MMToM(50.6);
   momentOfInertia = 25 * (stroke / 2) * (stroke / 2);
 }

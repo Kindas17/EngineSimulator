@@ -38,7 +38,6 @@ float IdealGas::SimpleFlow(float kFlow, float ext_pressure, float ext_temp,
   const float nrPrime = kFlow * deltaP;
 
   const float tout = ext_temp;
-  const float t0 = temperature;
   const float nr0 = nR;
 
   /* Update the status */
@@ -79,3 +78,5 @@ void IdealGas::HeatExchange(float kTherm, float ext_temp, float dt) {
   temperature = t;
   pressure = p;
 }
+
+void IdealGas::InjectHeat(float amount, float dt) {}

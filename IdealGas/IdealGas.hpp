@@ -1,8 +1,11 @@
 #ifndef IDEALGAS_HPP
 #define IDEALGAS_HPP
 
-#define DEFAULT_AMBIENT_PRESSURE (101325.f)
-#define DEFAULT_AMBIENT_TEMPERATURE (300.f)
+constexpr float DEFAULT_AMBIENT_PRESSURE = 101325.f;
+constexpr float DEFAULT_AMBIENT_TEMPERATURE = 300.f;
+constexpr float ZERO_CELSIUS_IN_KELVIN = 273.15f;
+constexpr float PAToATM(float X) { return ((X) / DEFAULT_AMBIENT_PRESSURE); }
+constexpr float KELVToCELS(float X) { return ((X)-ZERO_CELSIUS_IN_KELVIN); }
 
 class IdealGas {
 
@@ -18,6 +21,7 @@ public:
   void AdiabaticCompress(float vprime, float dt);
   float SimpleFlow(float kFlow, float ext_pressure, float ext_temp, float dt);
   void HeatExchange(float kTherm, float ext_temp, float dt);
+  void InjectHeat(float amount, float dt);
 
 private:
   float pressure;
