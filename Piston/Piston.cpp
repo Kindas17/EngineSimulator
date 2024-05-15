@@ -28,6 +28,7 @@ Piston::Piston(CylinderGeometry geometryInfo)
   throttle = 0.f;
 
   ignitionOn = false;
+  combustionInProgress = false;
   combustionAdvance = 7.5f;
 
   /* Initial update to initialize the piston status */
@@ -78,7 +79,7 @@ void Piston::updateStatus(float deltaT) {
 
   /* Thermodynamics */
   gas->AdiabaticCompress(V_prime, deltaT);
-  intakeFlow = gas->SimpleFlow(throttle * 0.0001f * intakeValve,
+  intakeFlow = gas->SimpleFlow(getThrottle(throttle) * 0.0001f * intakeValve,
                                DEFAULT_AMBIENT_PRESSURE,
                                DEFAULT_AMBIENT_TEMPERATURE, deltaT);
   exhaustFlow =
@@ -157,6 +158,10 @@ float Piston::getTorque() {
 
   return (getThetaAngle() < 0) ? absTorque + friction : -absTorque + friction;
   return 0.f;
+}
+
+constexpr float Piston::getThrottle(float curr) {
+  return (1.f - minThrottle) * curr + minThrottle;
 }
 
 CylinderGeometry::CylinderGeometry() {

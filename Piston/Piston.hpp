@@ -62,10 +62,12 @@ public:
   float getCompressionRatio();
   float getThetaAngle();
   float getTorque();
+  constexpr float getThrottle(float curr);
 
   /* Thermodynamics */
   float V_prime;
   IdealGas *gas;
+  bool combustionInProgress;
 
   /* Valves */
   float intakeValve;

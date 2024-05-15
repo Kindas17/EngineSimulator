@@ -101,6 +101,7 @@ int main(int argc, char *argv[]) {
     ImGui::InputFloat("Engine speed", &engineSpeed, 0, 0, "%.0f", 0);
     ImGui::Checkbox("Activate dynamics", &piston->dynamicsIsActive);
     ImGui::Checkbox("Ignition", &piston->ignitionOn);
+    ImGui::Text("Combustion in progress %d", piston->combustionInProgress);
     ImGui::End();
 
     /* Rendering */
