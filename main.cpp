@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
 
   /* Game initialization */
   Game *game = new Game("Engine Simulator", SDL_WINDOWPOS_UNDEFINED,
-                        SDL_WINDOWPOS_UNDEFINED, 700, 700);
+                        SDL_WINDOWPOS_UNDEFINED, 1000, 1000);
   FrameRVis *fVis = new FrameRVis();
   FrameRVis *load = new FrameRVis();
   CylinderGeometry *geom = new CylinderGeometry();
@@ -28,12 +28,15 @@ int main(int argc, char *argv[]) {
   CycleLogger *pressureLogger = new CycleLogger();
   CycleLogger *intakeLog = new CycleLogger();
   CycleLogger *exhaustLog = new CycleLogger();
+  CycleLogger *torqueLog = new CycleLogger();
+  CycleLogger *tempLog = new CycleLogger();
 
   printf("Game initialized\n");
 
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
+  ImPlot::CreateContext();
   ImGuiIO &io = ImGui::GetIO();
   ImGui_ImplSDL2_InitForSDLRenderer(game->window, game->renderer);
   ImGui_ImplSDLRenderer2_Init(game->renderer);
@@ -60,12 +63,16 @@ int main(int argc, char *argv[]) {
       pressureLogger->addSample(piston->gas->getP());
       intakeLog->addSample(piston->intakeFlow);
       exhaustLog->addSample(piston->exhaustFlow);
+      torqueLog->addSample(piston->getTorque());
+      tempLog->addSample(piston->gas->getT());
 
       if (piston->cycleTrigger) {
         pistonPosLogger->trig();
         pressureLogger->trig();
         intakeLog->trig();
         exhaustLog->trig();
+        torqueLog->trig();
+        tempLog->trig();
         piston->cycleTrigger = false;
       }
     }
@@ -80,29 +87,28 @@ int main(int argc, char *argv[]) {
     ImGui::Text("Load:      %.2f", 100.f * load->getLast() / FRAMETIME);
     ImGui::Text("Simul:     %.0f Hz",
                 fVis->getFramerate() * SIMULATION_MULTIPLIER);
-
-    // ImGui::InputFloat("Frametime [ms]", &FRAMETIME, 0, 0, "%.0f", 0);
-    // ImGui::InputInt("Multiplier: ", &SIMULATION_MULTIPLIER);
-    // ImGui::InputFloat("Engine speed", &engineSpeed, 0, 0, "%.0f", 0);
-    ImGui::PlotLines("Pressure", pressureLogger->getData(),
-                     pressureLogger->getSize());
-    ImGui::PlotLines("Intake", intakeLog->getData(), intakeLog->getSize());
-    ImGui::PlotLines("Exhaust", exhaustLog->getData(), exhaustLog->getSize());
-    ImGui::Text("Pressure:    %.0f Pa (%.2f atm)", piston->gas->getP(),
-                PAToATM(piston->gas->getP()));
-    ImGui::Text("Volume:      %.2f cc", M3ToCC(piston->gas->getV()));
-    ImGui::Text("Temperature: %.2f K (%.0f °C)", piston->gas->getT(),
-                KELVToCELS(piston->gas->getT()));
-
     ImGui::SliderFloat("Torque", &externalTorque, 0.f, 50.f);
     ImGui::SliderFloat("Throttle", &piston->throttle, 0.f, 1.f);
     ImGui::End();
 
     ImGui::Begin("Test2");
     ImGui::InputFloat("Engine speed", &engineSpeed, 0, 0, "%.0f", 0);
-    ImGui::InputFloat("Combustion Energy", &piston->energyInject, 0, 0, "%.0f", 0);
+    ImGui::InputFloat("Combustion Energy", &piston->energyInject, 0, 0, "%.0f",
+                      0);
     ImGui::Checkbox("Activate dynamics", &piston->dynamicsIsActive);
     ImGui::Checkbox("Ignition", &piston->ignitionOn);
+    ImGui::End();
+
+    ImGui::Begin("Test3");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Pressure", pressureLogger->getData(),
+                     pressureLogger->getSize());
+    ImPlot::PlotLine("Temperature", tempLog->getData(), tempLog->getSize());
+    ImPlot::PlotLine("Torque", torqueLog->getData(), torqueLog->getSize());
+    ImPlot::PlotLine("Intake", intakeLog->getData(), intakeLog->getSize());
+    ImPlot::PlotLine("Exhaust", exhaustLog->getData(), exhaustLog->getSize());
+    ImPlot::EndPlot();
     ImGui::End();
 
     /* Rendering */
@@ -126,6 +132,7 @@ int main(int argc, char *argv[]) {
 
   ImGui_ImplSDLRenderer2_Shutdown();
   ImGui_ImplSDL2_Shutdown();
+  ImPlot::DestroyContext();
   ImGui::DestroyContext();
 
   game->Clean();
