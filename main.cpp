@@ -92,14 +92,11 @@ int main(int argc, char *argv[]) {
                 fVis->getFramerate() * SIMULATION_MULTIPLIER);
     ImGui::SliderFloat("Torque", &externalTorque, 0.f, 50.f);
     ImGui::SliderFloat("Throttle", &piston->throttle, 0.f, 1.f);
-
-    ImGui::Text("Oxy:      %.2f", piston->gas->getOx());
     ImGui::End();
 
     ImGui::Begin("Test2");
     ImGui::InputFloat("Engine speed", &engineSpeed, 0, 0, "%.0f", 0);
-    ImGui::InputFloat("Combustion Energy", &piston->energyInject, 0, 0, "%.0f",
-                      0);
+    ImGui::InputFloat("Combustion Energy", &piston->kexpl, 0, 0, "%.0f", 0);
     ImGui::Checkbox("Activate dynamics", &piston->dynamicsIsActive);
     ImGui::Checkbox("Ignition", &piston->ignitionOn);
     ImGui::End();

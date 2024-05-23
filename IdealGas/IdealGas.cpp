@@ -73,19 +73,6 @@ void IdealGas::HeatExchange(float kTherm, float ext_temp, float dt) {
   pressure = p;
 }
 
-void IdealGas::InjectHeat(float qprime, float dt) {
-
-  const float t0 = temperature;
-  const float p0 = pressure;
-  const float tprime = qprime / (alpha * nR);
-
-  const float t = t0 + dt * tprime;
-  const float p = p0 + dt * tprime * nR / volume;
-
-  temperature = t;
-  pressure = p;
-}
-
 Gas::Gas(float p, float v, float t, float o) : IdealGas::IdealGas(p, v, t) {
 
   ox = o;
@@ -126,4 +113,18 @@ float Gas::SimpleFlow(float kFlow, float ext_pressure, float ext_temp,
   }
 
   return nrPrime * dt;
+}
+
+void Gas::InjectHeat(float kx, float dt) {
+
+  const float t0 = temperature;
+  const float p0 = pressure;
+
+  const float qprime = kx * nR * ox;
+
+  const float t = t0 + dt * qprime / (alpha * nR);
+  const float p = p0 + dt * qprime / (alpha * volume);
+
+  temperature = t;
+  pressure = p;
 }

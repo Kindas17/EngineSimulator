@@ -30,6 +30,7 @@ Piston::Piston(CylinderGeometry geometryInfo)
   ignitionOn = false;
   combustionInProgress = false;
   combustionAdvance = 7.5f;
+  kexpl = 0.f;
 
   /* Initial update to initialize the piston status */
   rodFoot = {.x = +(geometry.stroke / 2) * cosf(DEGToRAD(currentAngle)),
@@ -96,7 +97,7 @@ void Piston::updateStatus(float deltaT) {
   gas->HeatExchange(0.05f, DEFAULT_AMBIENT_TEMPERATURE, deltaT);
 
   if (combustionInProgress) {
-    gas->InjectHeat(energyInject, deltaT);
+    gas->InjectHeat(kexpl, deltaT);
     combustionInProgress = false;
   }
 }

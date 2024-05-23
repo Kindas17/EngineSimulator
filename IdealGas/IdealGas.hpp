@@ -21,7 +21,6 @@ public:
   void AdiabaticCompress(float vprime, float dt);
   float SimpleFlow(float kFlow, float ext_pressure, float ext_temp, float dt);
   void HeatExchange(float kTherm, float ext_temp, float dt);
-  void InjectHeat(float qprime, float dt);
 
 protected:
   float pressure;
@@ -40,6 +39,7 @@ public:
   float getOx() { return ox; };
   float SimpleFlow(float kFlow, float ext_pressure, float ext_temp,
                    float ext_ox, float dt);
+  void InjectHeat(float kx, float dt);
 
 private:
   float ox; // Oxygenation level [0, 1]
