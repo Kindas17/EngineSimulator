@@ -25,6 +25,7 @@ public:
   void addSample(float sample);
   float *getData();
   int getSize();
+  std::vector<float> getV();
 };
 
 #endif

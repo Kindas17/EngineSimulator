@@ -46,3 +46,5 @@ void CycleLogger::trig() {
     a.clear();
   }
 }
+
+std::vector<float> CycleLogger::getV() { return (which == 0) ? a : b; }

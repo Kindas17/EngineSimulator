@@ -3,16 +3,27 @@
 #include "Logger.hpp"
 #include "Piston.hpp"
 #include "PistonGraphics.hpp"
+#include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <numeric>
 
 int SIMULATION_MULTIPLIER = 200;
 float FRAMETIME = 20.f; /* ms */
 float pistonX = 350.f;
 float pistonY = 550.f;
-float engineSpeed = 0.f;
+float engineSpeed = 100.f;
 
 float externalTorque = 0.f;
+
+float average(std::vector<float> const &v) {
+  if (v.empty()) {
+    return 0;
+  }
+
+  auto const count = static_cast<float>(v.size());
+  return std::reduce(v.begin(), v.end()) / count;
+}
 
 int main(int argc, char *argv[]) {
   printf("Program started\n");
@@ -61,11 +72,11 @@ int main(int argc, char *argv[]) {
 
       /* Log Data */
       pistonPosLogger->addSample(piston->getPistonPosition());
-      pressureLogger->addSample(piston->gas->getP());
+      pressureLogger->addSample(PAToATM(piston->gas->getP()));
       intakeLog->addSample(piston->intakeFlow);
       exhaustLog->addSample(piston->exhaustFlow);
       torqueLog->addSample(piston->getTorque());
-      tempLog->addSample(piston->gas->getT());
+      tempLog->addSample(KELVToCELS(piston->gas->getT()));
       oxyLog->addSample(piston->gas->getOx());
 
       if (piston->cycleTrigger) {
@@ -80,6 +91,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    const float avgTorque = average(torqueLog->getV());
+
     ImGui_ImplSDLRenderer2_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
@@ -90,26 +103,60 @@ int main(int argc, char *argv[]) {
     ImGui::Text("Load:      %.2f", 100.f * load->getLast() / FRAMETIME);
     ImGui::Text("Simul:     %.0f Hz",
                 fVis->getFramerate() * SIMULATION_MULTIPLIER);
-    ImGui::SliderFloat("Torque", &externalTorque, 0.f, 50.f);
+
+    ImGui::Text("Output torque: %.0f Nm", avgTorque);
+    ImGui::Text("Output power:  %.0f W", avgTorque * piston->omega);
+
+    ImGui::Checkbox("Activate dynamics", &piston->dynamicsIsActive);
+    ImGui::Checkbox("Ignition", &piston->ignitionOn);
+    ImGui::SliderFloat("Torque", &externalTorque, -20.f, 0.f);
     ImGui::SliderFloat("Throttle", &piston->throttle, 0.f, 1.f);
     ImGui::End();
 
     ImGui::Begin("Test2");
     ImGui::InputFloat("Engine speed", &engineSpeed, 0, 0, "%.0f", 0);
-    ImGui::InputFloat("Combustion Energy", &piston->kexpl, 0, 0, "%.0f", 0);
-    ImGui::Checkbox("Activate dynamics", &piston->dynamicsIsActive);
-    ImGui::Checkbox("Ignition", &piston->ignitionOn);
+    ImGui::InputFloat("Combustion K", &piston->kexpl, 0, 0, "%.4f", 0);
+    ImGui::InputFloat("Combustion Advance °", &piston->combustionAdvance, 0, 0,
+                      "%.2f", 0);
+    ImGui::InputFloat("Thermal K", &piston->thermalK, 0, 0, "%.4f", 0);
+    ImGui::InputFloat("Intake K", &piston->intakeCoef, 0, 0, "%.4f", 0);
+    ImGui::InputFloat("Exhaust K", &piston->exhaustCoef, 0, 0, "%.4f", 0);
+    ImGui::InputFloat("Min Throttle", &piston->minThrottle, 0, 0, "%.4f", 0);
     ImGui::End();
 
     ImGui::Begin("Test3");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Torque", torqueLog->getData(),
+                     std::min(torqueLog->getSize(), 15000));
+    ImPlot::PlotLine("Oxy", oxyLog->getData(),
+                     std::min(oxyLog->getSize(), 15000));
+    ImPlot::EndPlot();
+    ImGui::End();
+
+    ImGui::Begin("Test4");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
     ImPlot::PlotLine("Pressure", pressureLogger->getData(),
-                     pressureLogger->getSize());
-    ImPlot::PlotLine("Temperature", tempLog->getData(), tempLog->getSize());
-    ImPlot::PlotLine("Torque", torqueLog->getData(), torqueLog->getSize());
-    ImPlot::PlotLine("Intake", intakeLog->getData(), intakeLog->getSize());
-    ImPlot::PlotLine("Exhaust", exhaustLog->getData(), exhaustLog->getSize());
+                     std::min(pressureLogger->getSize(), 15000));
+    ImPlot::EndPlot();
+    ImGui::End();
+
+    ImGui::Begin("Test5");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Temperature", tempLog->getData(),
+                     std::min(tempLog->getSize(), 15000));
+    ImPlot::EndPlot();
+    ImGui::End();
+
+    ImGui::Begin("Test6");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Intake", intakeLog->getData(),
+                     std::min(intakeLog->getSize(), 15000));
+    ImPlot::PlotLine("Exhaust", exhaustLog->getData(),
+                     std::min(exhaustLog->getSize(), 15000));
     ImPlot::EndPlot();
     ImGui::End();
 

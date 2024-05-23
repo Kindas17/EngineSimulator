@@ -101,15 +101,15 @@ float Gas::SimpleFlow(float kFlow, float ext_pressure, float ext_temp,
 
   /* Weighted average of entering and internal fluid */
   if (nrPrime > 0) {
+    const float ox0 = ox;
+    const float ox1 = (dt * nrPrime * ext_ox + nr0 * ox0) / nR;
+
+    ox = ox1;
 
     const float adjT = pressure * volume / nR;
     const float t = (dt * nrPrime * tout + nr0 * adjT) / nR;
 
-    const float ox0 = ox;
-    const float ox1 = (dt * nrPrime * ext_ox + nr0 * ox0) / nR;
-
     temperature = t;
-    ox = ox1;
   }
 
   return nrPrime * dt;
@@ -120,11 +120,12 @@ void Gas::InjectHeat(float kx, float dt) {
   const float t0 = temperature;
   const float p0 = pressure;
 
-  const float qprime = kx * nR * ox;
+  const float qprime = 10000.0f * kx * nR * ox / dt;
 
   const float t = t0 + dt * qprime / (alpha * nR);
   const float p = p0 + dt * qprime / (alpha * volume);
 
   temperature = t;
   pressure = p;
+  ox *= (1.f - kx);
 }

@@ -24,13 +24,20 @@ Piston::Piston(CylinderGeometry geometryInfo)
   /* Dynamics */
   currentAngle = headAngle * 2 + 90; /* Deg */
 
-  minThrottle = 0.0075f;
+  minThrottle = 0.075f;
   throttle = 0.f;
 
   ignitionOn = false;
   combustionInProgress = false;
-  combustionAdvance = 7.5f;
-  kexpl = 0.f;
+  combustionAdvance = 0.f;
+  kexpl = 0.07f;
+
+  // Calibrations
+  thermalK = 0.5f;
+
+  // Valves
+  intakeCoef = 0.0006f;
+  exhaustCoef = 0.0004f;
 
   /* Initial update to initialize the piston status */
   rodFoot = {.x = +(geometry.stroke / 2) * cosf(DEGToRAD(currentAngle)),
@@ -68,7 +75,7 @@ void Piston::updatePosition(float deltaT, float setSpeed) {
   }
 
   /* Check if the spark plug has triggered */
-  if (previousHeadAngle < combustionAdvance + 180 &&
+  if (ignitionOn && previousHeadAngle < combustionAdvance + 180 &&
       headAngle > combustionAdvance + 180) {
     combustionInProgress = true;
   }
@@ -88,17 +95,16 @@ void Piston::updateStatus(float deltaT) {
 
   /* Thermodynamics */
   gas->AdiabaticCompress(V_prime, deltaT);
-  intakeFlow = gas->SimpleFlow(getThrottle(throttle) * 0.0001f * intakeValve,
+  intakeFlow = gas->SimpleFlow(getThrottle(throttle) * intakeCoef * intakeValve,
                                DEFAULT_AMBIENT_PRESSURE,
                                DEFAULT_AMBIENT_TEMPERATURE, 1.f, deltaT);
   exhaustFlow =
-      gas->SimpleFlow(0.0001f * exhaustValve, DEFAULT_AMBIENT_PRESSURE,
+      gas->SimpleFlow(exhaustCoef * exhaustValve, DEFAULT_AMBIENT_PRESSURE,
                       DEFAULT_AMBIENT_TEMPERATURE, 0.f, deltaT);
-  gas->HeatExchange(0.05f, DEFAULT_AMBIENT_TEMPERATURE, deltaT);
+  gas->HeatExchange(thermalK, DEFAULT_AMBIENT_TEMPERATURE, deltaT);
 
   if (combustionInProgress) {
     gas->InjectHeat(kexpl, deltaT);
-    combustionInProgress = false;
   }
 }
 

@@ -76,6 +76,10 @@ public:
   float intakeFlow;
   float exhaustFlow;
   float leakageFlow;
+  float intakeCoef;
+  float exhaustCoef;
+
+  float thermalK;
 
   /* Settings */
   bool dynamicsIsActive;
