@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) {
   CycleLogger *exhaustLog = new CycleLogger();
   CycleLogger *torqueLog = new CycleLogger();
   CycleLogger *tempLog = new CycleLogger();
+  CycleLogger *oxyLog = new CycleLogger();
 
   printf("Game initialized\n");
 
@@ -65,6 +66,7 @@ int main(int argc, char *argv[]) {
       exhaustLog->addSample(piston->exhaustFlow);
       torqueLog->addSample(piston->getTorque());
       tempLog->addSample(piston->gas->getT());
+      oxyLog->addSample(piston->gas->getOx());
 
       if (piston->cycleTrigger) {
         pistonPosLogger->trig();
@@ -73,6 +75,7 @@ int main(int argc, char *argv[]) {
         exhaustLog->trig();
         torqueLog->trig();
         tempLog->trig();
+        oxyLog->trig();
         piston->cycleTrigger = false;
       }
     }
@@ -89,6 +92,8 @@ int main(int argc, char *argv[]) {
                 fVis->getFramerate() * SIMULATION_MULTIPLIER);
     ImGui::SliderFloat("Torque", &externalTorque, 0.f, 50.f);
     ImGui::SliderFloat("Throttle", &piston->throttle, 0.f, 1.f);
+
+    ImGui::Text("Oxy:      %.2f", piston->gas->getOx());
     ImGui::End();
 
     ImGui::Begin("Test2");

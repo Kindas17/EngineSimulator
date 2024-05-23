@@ -36,7 +36,7 @@ Piston::Piston(CylinderGeometry geometryInfo)
              .y = -(geometry.stroke / 2) * sinf(DEGToRAD(currentAngle))};
 
   /* Thermodynamics */
-  gas = new IdealGas(DEFAULT_AMBIENT_PRESSURE, getChamberVolume(), 300.f);
+  gas = new Gas(DEFAULT_AMBIENT_PRESSURE, getChamberVolume(), 300.f, 1.f);
 
   dynamicsIsActive = true;
 }
@@ -67,7 +67,8 @@ void Piston::updatePosition(float deltaT, float setSpeed) {
   }
 
   /* Check if the spark plug has triggered */
-  if (previousHeadAngle < combustionAdvance + 180 && headAngle > combustionAdvance + 180) {
+  if (previousHeadAngle < combustionAdvance + 180 &&
+      headAngle > combustionAdvance + 180) {
     combustionInProgress = true;
   }
 
@@ -88,10 +89,10 @@ void Piston::updateStatus(float deltaT) {
   gas->AdiabaticCompress(V_prime, deltaT);
   intakeFlow = gas->SimpleFlow(getThrottle(throttle) * 0.0001f * intakeValve,
                                DEFAULT_AMBIENT_PRESSURE,
-                               DEFAULT_AMBIENT_TEMPERATURE, deltaT);
+                               DEFAULT_AMBIENT_TEMPERATURE, 1.f, deltaT);
   exhaustFlow =
       gas->SimpleFlow(0.0001f * exhaustValve, DEFAULT_AMBIENT_PRESSURE,
-                      DEFAULT_AMBIENT_TEMPERATURE, deltaT);
+                      DEFAULT_AMBIENT_TEMPERATURE, 0.f, deltaT);
   gas->HeatExchange(0.05f, DEFAULT_AMBIENT_TEMPERATURE, deltaT);
 
   if (combustionInProgress) {

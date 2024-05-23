@@ -23,13 +23,26 @@ public:
   void HeatExchange(float kTherm, float ext_temp, float dt);
   void InjectHeat(float qprime, float dt);
 
-private:
+protected:
   float pressure;
   float volume;
   float nR;
   float temperature;
 
   const float alpha = 5.f / 2.f;
+};
+
+class Gas : public IdealGas {
+
+public:
+  Gas(float p, float v, float t, float o);
+
+  float getOx() { return ox; };
+  float SimpleFlow(float kFlow, float ext_pressure, float ext_temp,
+                   float ext_ox, float dt);
+
+private:
+  float ox; // Oxygenation level [0, 1]
 };
 
 #endif
