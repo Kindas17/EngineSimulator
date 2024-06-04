@@ -66,7 +66,8 @@ public:
 
   /* Thermodynamics */
   float V_prime;
-  Gas *gas;
+  IdealGas* gas;
+  // Gas *gas;
   bool combustionInProgress;
   float kexpl;
 

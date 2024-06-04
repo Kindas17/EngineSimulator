@@ -4,13 +4,13 @@
 
 class Logger {
 public:
-  Logger(int max_size);
+  Logger(size_t max_size);
   void addSample(float sample);
   float *getData();
   int getSize();
 
 private:
-  int max_size;
+  size_t max_size;
   std::vector<float> v;
 };
 

@@ -18,12 +18,14 @@ find_package(implot REQUIRED)
 add_subdirectory(Piston)
 add_subdirectory(Logger)
 add_subdirectory(IdealGas)
+add_subdirectory(Solver)
 
 target_link_libraries(tutorial
 	PRIVATE
 	Piston
 	Logger
 	IdealGas
+	Solver
 
 	imgui::imgui
 	SDL2::SDL2

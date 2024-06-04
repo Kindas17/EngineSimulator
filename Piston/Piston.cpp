@@ -44,9 +44,10 @@ Piston::Piston(CylinderGeometry geometryInfo)
              .y = -(geometry.stroke / 2) * sinf(DEGToRAD(currentAngle))};
 
   /* Thermodynamics */
-  gas = new Gas(DEFAULT_AMBIENT_PRESSURE, getChamberVolume(), 300.f, 1.f);
+  gas = new IdealGas(101325.f, getChamberVolume(), 300.f);
+  // gas = new Gas(DEFAULT_AMBIENT_PRESSURE, getChamberVolume(), 300.f, 1.f);
 
-  dynamicsIsActive = true;
+  dynamicsIsActive = false;
 }
 
 void Piston::updatePosition(float deltaT, float setSpeed) {
@@ -90,22 +91,8 @@ void Piston::updatePosition(float deltaT, float setSpeed) {
 }
 
 void Piston::updateStatus(float deltaT) {
-  /* Valve Status Update */
-  ValveMgm();
-
-  /* Thermodynamics */
-  gas->AdiabaticCompress(V_prime, deltaT);
-  intakeFlow = gas->SimpleFlow(getThrottle(throttle) * intakeCoef * intakeValve,
-                               DEFAULT_AMBIENT_PRESSURE,
-                               DEFAULT_AMBIENT_TEMPERATURE, 1.f, deltaT);
-  exhaustFlow =
-      gas->SimpleFlow(exhaustCoef * exhaustValve, DEFAULT_AMBIENT_PRESSURE,
-                      DEFAULT_AMBIENT_TEMPERATURE, 0.f, deltaT);
-  gas->HeatExchange(thermalK, DEFAULT_AMBIENT_TEMPERATURE, deltaT);
-
-  if (combustionInProgress) {
-    gas->InjectHeat(kexpl, deltaT);
-  }
+  // /* Thermodynamics */
+  // gas->AdiabaticCompress(V_prime, deltaT);
 }
 
 void Piston::applyExtTorque(float torque) { externalTorque = torque; }
@@ -167,16 +154,18 @@ float Piston::getThetaAngle() {
 }
 
 float Piston::getTorque() {
-  const float pistonSurface =
-      (geometry.bore * geometry.bore * std::numbers::pi * 0.25);
-  const float topPistonPressure = gas->getP(); // thermo.gas.P;
-  const float force =
-      pistonSurface * (topPistonPressure - 101325) * std::cos(getThetaAngle());
+  // const float pistonSurface =
+  //     (geometry.bore * geometry.bore * std::numbers::pi * 0.25);
+  // const float topPistonPressure = gas->getP(); // thermo.gas.P;
+  // const float force =
+  //     pistonSurface * (topPistonPressure - 101325) *
+  //     std::cos(getThetaAngle());
 
-  const float friction = -omega * 0.05f;
-  const float absTorque = (force * geometry.stroke) / 2;
+  // const float friction = -omega * 0.05f;
+  // const float absTorque = (force * geometry.stroke) / 2;
 
-  return (getThetaAngle() < 0) ? absTorque + friction : -absTorque + friction;
+  // return (getThetaAngle() < 0) ? absTorque + friction : -absTorque +
+  // friction;
   return 0.f;
 }
 

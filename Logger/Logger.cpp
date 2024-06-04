@@ -1,6 +1,6 @@
 #include "Logger.hpp"
 
-Logger::Logger(int max_size) { this->max_size = max_size; }
+Logger::Logger(size_t max_size) { this->max_size = max_size; }
 
 void Logger::addSample(float sample) {
   v.push_back(sample);
