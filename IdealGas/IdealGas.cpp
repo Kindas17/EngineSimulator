@@ -11,15 +11,21 @@ IdealGas::IdealGas(float p, float v, float t) {
   state[2] = state[0] * state[1] / state[3];
 }
 
-std::valarray<float> F(float t, std::valarray<float> &state, float VPrime) {
+std::valarray<float> F(float t, std::valarray<float> &st, float VPrime,
+                       float nRPrime, float TPrime) {
 
   const float alpha = IdealGas::alpha;
-  return std::valarray<float>{
-      -(1.f + 1.f / alpha) * state[0] * VPrime / state[1], // P'
-      VPrime,                                              // V'
-      0.f,                                                 // nR'
-      -state[0] * VPrime / (alpha * state[2])              // T'
-  };
+
+  const float nRp = nRPrime;
+  const float Vp = VPrime;
+
+  // const float Tp =
+  //     TPrime - (st[0] * Vp + alpha * nRp * st[3]) / (alpha * st[2]);
+  const float Tp = TPrime - (st[0] * Vp) / (alpha * st[2]);
+
+  const float Pp = (nRp * st[3] + st[2] * Tp - st[0] * Vp) / st[1];
+
+  return std::valarray<float>{Pp, Vp, nRp, Tp};
 }
 
 // void IdealGas::AdiabaticCompress(float vprime, float dt) {

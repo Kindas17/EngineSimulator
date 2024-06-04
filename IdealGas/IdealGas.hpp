@@ -9,7 +9,8 @@ constexpr float ZERO_CELSIUS_IN_KELVIN = 273.15f;
 constexpr float PAToATM(float X) { return ((X) / DEFAULT_AMBIENT_PRESSURE); }
 constexpr float KELVToCELS(float X) { return ((X)-ZERO_CELSIUS_IN_KELVIN); }
 
-std::valarray<float> F(float t, std::valarray<float> &state, float VPrime);
+std::valarray<float> F(float t, std::valarray<float> &st, float VPrime,
+                       float nRPrime, float TPrime);
 
 class IdealGas {
 

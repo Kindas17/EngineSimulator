@@ -14,7 +14,7 @@ constexpr float getTimeStep_s(int mult, float frametime) {
   return frametime / (1000.f * mult);
 }
 
-constexpr int SIMULATION_MULTIPLIER = 1;
+constexpr int SIMULATION_MULTIPLIER = 3;
 constexpr float FRAMETIME = 25.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
 bool start = false;
@@ -48,7 +48,6 @@ int main(int argc, char *argv[]) {
   Logger *voluLog = new Logger(SIZE_LOG);
   Logger *nrLog = new Logger(SIZE_LOG);
   Logger *tempLog = new Logger(SIZE_LOG);
-  // IdealGas *gas = new IdealGas(101325.f, 10.f, 300.f);
 
   /* Game Loop */
   while (game->isGameRunning()) {
@@ -72,8 +71,14 @@ int main(int argc, char *argv[]) {
         const float t = 0.001f * (gameLoopCnt * FRAMETIME +
                                   i * FRAMETIME / SIMULATION_MULTIPLIER);
 
+        const float VPrime = piston->V_prime;
+        const float nRPrime = piston->intakeValve * piston->intakeCoef *
+                                  (101325.f - piston->gas->state[0]) +
+                              piston->exhaustValve * piston->exhaustCoef *
+                                  (101325.f - piston->gas->state[0]);
+        const float TPrime = 0.f;
         std::function<std::valarray<float>(float, std::valarray<float> &)> F2 =
-            std::bind(F, _1, _2, piston->V_prime);
+            std::bind(F, _1, _2, VPrime, nRPrime, TPrime);
 
         piston->gas->state = RungeKutta4(deltaT, t, piston->gas->state, F2);
 

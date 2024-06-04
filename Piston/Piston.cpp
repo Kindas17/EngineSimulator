@@ -16,12 +16,12 @@ inline float angleWrapper(float angle) {
   return angle;
 }
 
-Piston::Piston(CylinderGeometry geometryInfo)
-    : omega{}, headAngle{}, externalTorque{} {
+Piston::Piston(CylinderGeometry geometryInfo) : omega{}, externalTorque{} {
   /* Piston Geometry */
   this->geometry = geometryInfo;
 
   /* Dynamics */
+  headAngle = 45;
   currentAngle = headAngle * 2 + 90; /* Deg */
 
   minThrottle = 0.075f;
@@ -36,16 +36,15 @@ Piston::Piston(CylinderGeometry geometryInfo)
   thermalK = 0.5f;
 
   // Valves
-  intakeCoef = 0.0006f;
-  exhaustCoef = 0.0004f;
+  intakeCoef  = 0.000012f;
+  exhaustCoef = 0.000008f;
 
   /* Initial update to initialize the piston status */
   rodFoot = {.x = +(geometry.stroke / 2) * cosf(DEGToRAD(currentAngle)),
              .y = -(geometry.stroke / 2) * sinf(DEGToRAD(currentAngle))};
 
   /* Thermodynamics */
-  gas = new IdealGas(101325.f, getChamberVolume(), 300.f);
-  // gas = new Gas(DEFAULT_AMBIENT_PRESSURE, getChamberVolume(), 300.f, 1.f);
+  gas = new IdealGas(70000.f, getChamberVolume(), 300.f);
 
   dynamicsIsActive = false;
 }
@@ -91,6 +90,7 @@ void Piston::updatePosition(float deltaT, float setSpeed) {
 }
 
 void Piston::updateStatus(float deltaT) {
+  ValveMgm();
   // /* Thermodynamics */
   // gas->AdiabaticCompress(V_prime, deltaT);
 }
