@@ -12,139 +12,38 @@ IdealGas::IdealGas(float p, float v, float t) {
 }
 
 std::valarray<float> F(float t, std::valarray<float> &st, float VPrime,
-                       float nRPrime, float TPrime) {
+                       float nRPrime, float QPrime) {
 
-  const float alpha = IdealGas::alpha;
+  const float a = IdealGas::alpha;
+  const float P = st[0];
+  const float V = st[1];
+  const float nR = st[2];
+  const float T = st[3];
 
   const float nRp = nRPrime;
   const float Vp = VPrime;
-
-  // const float Tp =
-  //     TPrime - (st[0] * Vp + alpha * nRp * st[3]) / (alpha * st[2]);
-  const float Tp = TPrime - (st[0] * Vp) / (alpha * st[2]);
-
-  const float Pp = (nRp * st[3] + st[2] * Tp - st[0] * Vp) / st[1];
+  const float Tp = (QPrime - a * nRp * T - P * Vp) / (a * nR);
+  const float Pp = (nRp * T + nR * Tp - P * Vp) / V;
 
   return std::valarray<float>{Pp, Vp, nRp, Tp};
 }
 
-// void IdealGas::AdiabaticCompress(float vprime, float dt) {
+void IdealGas::updateState(float Vp, float kFlow_int, float kFlow_exh,
+                           float Pout_int, float Pout_exh, float Tout_int,
+                           float Tout_exh) {
 
-//   /* Compute the pressure variation */
-//   const float p0 = pressure;
-//   const float v0 = volume;
-//   const float v = v0 + vprime * dt;
-//   const float p = p0 * std::pow((v / v0), -1.4f);
+  VPrime = Vp;
 
-//   /* Update the status */
-//   pressure = p;
-//   volume = v;
-//   temperature = pressure * volume / nR;
-// }
+  const float P = state[0];
+  const float T = state[3];
 
-// float IdealGas::SimpleFlow(float kFlow, float ext_pressure, float ext_temp,
-//                            float dt) {
+  const float nRPrime_Int = kFlow_int * (Pout_int - P);
+  const float nRPrime_Exh = kFlow_exh * (Pout_exh - P);
+  nRPrime = nRPrime_Int + nRPrime_Exh;
 
-//   /* SIMPLIFIED VERSION - TEMPERATURE VARIATION */
-//   /* Compute the pressure variation */
-//   const float a = temperature / volume;
-//   const float b = ext_pressure;
-//   const float p0 = pressure;
-//   const float c1 = p0 - b;
-//   const float p = c1 * std::exp(-a * kFlow * dt) + b;
-
-//   const float deltaP = (b - p0);
-//   const float nrPrime = kFlow * deltaP;
-
-//   const float tout = ext_temp;
-//   const float nr0 = nR;
-
-//   /* Update the status */
-//   pressure = p;
-//   nR += nrPrime * dt;
-
-//   /* Weighted average of entering and internal fluid */
-//   const float adjT = pressure * volume / nR;
-//   const float t = (dt * nrPrime * tout + nr0 * adjT) / nR;
-
-//   temperature = t;
-
-//   return nrPrime * dt;
-// }
-
-// void IdealGas::HeatExchange(float kTherm, float ext_temp, float dt) {
-
-//   const float t0 = temperature;
-//   const float p0 = pressure;
-//   const float c = ext_temp;
-//   const float b = volume;
-//   const float r = nR;
-
-//   const float y1 = t0 - c;
-//   const float y2 = p0 - c * r / b;
-
-//   const float expo = std::exp(kTherm * dt / (alpha * r));
-//   const float t = y1 * expo + c;
-//   const float p = (1 - expo) * r * y1 / b + y2 + c * r / b;
-
-//   /* Update the status */
-//   temperature = t;
-//   pressure = p;
-// }
-
-// Gas::Gas(float p, float v, float t, float o) : IdealGas::IdealGas(p, v, t) {
-
-//   ox = o;
-// }
-
-// float Gas::SimpleFlow(float kFlow, float ext_pressure, float ext_temp,
-//                       float ext_ox, float dt) {
-
-//   /* SIMPLIFIED VERSION - TEMPERATURE VARIATION */
-//   /* Compute the pressure variation */
-//   const float a = temperature / volume;
-//   const float b = ext_pressure;
-//   const float p0 = pressure;
-//   const float c1 = p0 - b;
-//   const float p = c1 * std::exp(-a * kFlow * dt) + b;
-
-//   const float deltaP = (b - p0);
-//   const float nrPrime = kFlow * deltaP;
-
-//   const float tout = ext_temp;
-//   const float nr0 = nR;
-
-//   /* Update the status */
-//   pressure = p;
-//   nR += nrPrime * dt;
-
-//   /* Weighted average of entering and internal fluid */
-//   if (nrPrime > 0) {
-//     const float ox0 = ox;
-//     const float ox1 = (dt * nrPrime * ext_ox + nr0 * ox0) / nR;
-
-//     ox = ox1;
-
-//     const float adjT = pressure * volume / nR;
-//     const float t = (dt * nrPrime * tout + nr0 * adjT) / nR;
-
-//     temperature = t;
-//   }
-
-//   return nrPrime * dt;
-// }
-
-// void Gas::InjectHeat(float kx, float dt) {
-
-//   const float t0 = temperature;
-//   const float p0 = pressure;
-
-//   const float qprime = 10000.0f * kx * nR * ox / dt;
-
-//   const float t = t0 + dt * qprime / (alpha * nR);
-//   const float p = p0 + dt * qprime / (alpha * volume);
-
-//   temperature = t;
-//   pressure = p;
-//   ox *= (1.f - kx);
-// }
+  QPrime = 0.f;
+  QPrime += (nRPrime_Int > 0.f) ? alpha * nRPrime_Int * Tout_int
+                                : alpha * nRPrime_Int * T;
+  QPrime += (nRPrime_Exh > 0.f) ? alpha * nRPrime_Exh * Tout_exh
+                                : alpha * nRPrime_Exh * T;
+}

@@ -1,6 +1,10 @@
 #include "Piston.hpp"
+#include "Solver.hpp"
 #include <cmath>
 #include <numbers>
+#include <functional>
+
+using namespace std::placeholders;
 
 constexpr float CRANKSHAFT_L = 25.0f;            /* [mm] */
 constexpr float BIELLA_L = 55.0f;                /* [mm] */
@@ -21,7 +25,7 @@ Piston::Piston(CylinderGeometry geometryInfo) : omega{}, externalTorque{} {
   this->geometry = geometryInfo;
 
   /* Dynamics */
-  headAngle = 45;
+  headAngle = 35;
   currentAngle = headAngle * 2 + 90; /* Deg */
 
   minThrottle = 0.075f;
@@ -36,7 +40,7 @@ Piston::Piston(CylinderGeometry geometryInfo) : omega{}, externalTorque{} {
   thermalK = 0.5f;
 
   // Valves
-  intakeCoef  = 0.000012f;
+  intakeCoef = 0.000012f;
   exhaustCoef = 0.000008f;
 
   /* Initial update to initialize the piston status */
@@ -44,7 +48,7 @@ Piston::Piston(CylinderGeometry geometryInfo) : omega{}, externalTorque{} {
              .y = -(geometry.stroke / 2) * sinf(DEGToRAD(currentAngle))};
 
   /* Thermodynamics */
-  gas = new IdealGas(70000.f, getChamberVolume(), 300.f);
+  gas = new IdealGas(101325.f, getChamberVolume(), 300.f);
 
   dynamicsIsActive = false;
 }
@@ -90,9 +94,18 @@ void Piston::updatePosition(float deltaT, float setSpeed) {
 }
 
 void Piston::updateStatus(float deltaT) {
+
+  // Update valve position
   ValveMgm();
-  // /* Thermodynamics */
-  // gas->AdiabaticCompress(V_prime, deltaT);
+
+  gas->updateState(V_prime, intakeCoef * intakeValve,
+                   exhaustCoef * exhaustValve, 101325.f, 101325.f, 300.f,
+                   300.f);
+
+  std::function<std::valarray<float>(float, std::valarray<float> &)> F2 =
+      std::bind(F, _1, _2, gas->VPrime, gas->nRPrime, gas->QPrime);
+
+  gas->state = RungeKutta4(deltaT, 0.f, gas->state, F2);
 }
 
 void Piston::applyExtTorque(float torque) { externalTorque = torque; }

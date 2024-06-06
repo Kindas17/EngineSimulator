@@ -15,4 +15,5 @@ target_link_libraries(Piston
     PRIVATE
     IdealGas
     SDL2::SDL2
+    Solver
 )

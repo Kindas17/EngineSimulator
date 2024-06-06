@@ -13,6 +13,10 @@ constexpr float RADToDEG(float X) {
 }
 constexpr float RADSToHZ(float X) { return ((X) / (2 * std::numbers::pi)); }
 constexpr float RADSToRPM(float X) { return (60.0 * RADSToHZ((X))); }
+constexpr float RPMToHz(float X) { return X / 60.f; }
+constexpr float RPMToRADS(float X) {
+  return 2.f * std::numbers::pi * RPMToHz(X);
+}
 constexpr float M3ToCC(float X) { return (1000000 * (X)); }
 constexpr float MMToM(float X) { return ((X) / 1000.0); }
 
@@ -66,7 +70,7 @@ public:
 
   /* Thermodynamics */
   float V_prime;
-  IdealGas* gas;
+  IdealGas *gas;
   // Gas *gas;
   bool combustionInProgress;
   float kexpl;

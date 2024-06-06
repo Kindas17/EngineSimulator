@@ -3,9 +3,7 @@
 #include "Logger.hpp"
 #include "Piston.hpp"
 #include "PistonGraphics.hpp"
-#include "Solver.hpp"
 #include <cmath>
-#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <numeric>
@@ -14,14 +12,14 @@ constexpr float getTimeStep_s(int mult, float frametime) {
   return frametime / (1000.f * mult);
 }
 
-constexpr int SIMULATION_MULTIPLIER = 3;
+constexpr int SIMULATION_MULTIPLIER = 50;
 constexpr float FRAMETIME = 25.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
 bool start = false;
 
-int main(int argc, char *argv[]) {
+float engineSpeed = 0.f; // rpm
 
-  using namespace std::placeholders;
+int main(int argc, char *argv[]) {
 
   size_t gameLoopCnt = 0;
   printf("Program started\n");
@@ -44,10 +42,10 @@ int main(int argc, char *argv[]) {
 
   CylinderGeometry *geom = new CylinderGeometry();
   Piston *piston = new Piston(*geom);
-  Logger *presLog = new Logger(SIZE_LOG);
-  Logger *voluLog = new Logger(SIZE_LOG);
-  Logger *nrLog = new Logger(SIZE_LOG);
-  Logger *tempLog = new Logger(SIZE_LOG);
+  CycleLogger *presLog = new CycleLogger();
+  CycleLogger *voluLog = new CycleLogger();
+  CycleLogger *nrLog = new CycleLogger();
+  CycleLogger *tempLog = new CycleLogger();
 
   /* Game Loop */
   while (game->isGameRunning()) {
@@ -64,31 +62,27 @@ int main(int argc, char *argv[]) {
 
       for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
 
-        piston->updatePosition(FRAMETIME / (1000.f * SIMULATION_MULTIPLIER),
-                               10.f);
-
         const float deltaT = getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME);
         const float t = 0.001f * (gameLoopCnt * FRAMETIME +
                                   i * FRAMETIME / SIMULATION_MULTIPLIER);
 
-        const float VPrime = piston->V_prime;
-        const float nRPrime = piston->intakeValve * piston->intakeCoef *
-                                  (101325.f - piston->gas->state[0]) +
-                              piston->exhaustValve * piston->exhaustCoef *
-                                  (101325.f - piston->gas->state[0]);
-        const float TPrime = 0.f;
-        std::function<std::valarray<float>(float, std::valarray<float> &)> F2 =
-            std::bind(F, _1, _2, VPrime, nRPrime, TPrime);
+        const float prevHeadAngle = piston->headAngle;
+        piston->updatePosition(deltaT, RPMToRADS(engineSpeed));
 
-        piston->gas->state = RungeKutta4(deltaT, t, piston->gas->state, F2);
+        presLog->addSample(PAToATM(piston->gas->getP()));
+        voluLog->addSample(M3ToCC(piston->gas->getV()));
+        nrLog->addSample(piston->gas->getnR());
+        tempLog->addSample(KELVToCELS(piston->gas->getT()));
+
+        if (piston->headAngle < prevHeadAngle) {
+          presLog->trig();
+          voluLog->trig();
+          nrLog->trig();
+          tempLog->trig();
+        }
 
         // End Simulation
       }
-
-      presLog->addSample(piston->gas->getP());
-      voluLog->addSample(piston->gas->getV());
-      nrLog->addSample(piston->gas->getnR());
-      tempLog->addSample(piston->gas->getT());
     }
 
     ImGui_ImplSDLRenderer2_NewFrame();
@@ -103,26 +97,32 @@ int main(int argc, char *argv[]) {
     ImGui::Text("DeltaT:  %.4f ms",
                 1000.f * getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME));
     ImGui::Checkbox("Start", &start);
+    ImGui::SliderFloat("Engine Speed [rpm]", &engineSpeed, 0.f, 1000.f);
+    ImGui::SliderFloat("Intake Coef", &piston->intakeCoef, 0.f, 0.000100f,
+                       "%.6f");
+    ImGui::SliderFloat("Exhaust Coef", &piston->exhaustCoef, 0.f, 0.000100f,
+                       "%.6f");
     ImGui::End();
 
     ImGui::Begin("Test4");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("Pressure", presLog->getData(), presLog->getSize());
+    ImPlot::PlotLine("Pressure [atm]", presLog->getData(), presLog->getSize());
     ImPlot::EndPlot();
     ImGui::End();
 
     ImGui::Begin("Test5");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("Temperature", tempLog->getData(), tempLog->getSize());
+    ImPlot::PlotLine("Temperature [°C]", tempLog->getData(),
+                     tempLog->getSize());
     ImPlot::EndPlot();
     ImGui::End();
 
     ImGui::Begin("Test6");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("Volume", voluLog->getData(), voluLog->getSize());
+    ImPlot::PlotLine("Volume [cc]", voluLog->getData(), voluLog->getSize());
     ImPlot::EndPlot();
     ImGui::End();
 

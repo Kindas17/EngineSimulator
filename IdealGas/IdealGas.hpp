@@ -10,7 +10,7 @@ constexpr float PAToATM(float X) { return ((X) / DEFAULT_AMBIENT_PRESSURE); }
 constexpr float KELVToCELS(float X) { return ((X)-ZERO_CELSIUS_IN_KELVIN); }
 
 std::valarray<float> F(float t, std::valarray<float> &st, float VPrime,
-                       float nRPrime, float TPrime);
+                       float nRPrime, float QPrime);
 
 class IdealGas {
 
@@ -24,20 +24,13 @@ public:
 
   static constexpr float alpha = 5.f / 2.f;
   std::valarray<float> state = {0.f, 0.f, 0.f, 0.f};
+
+  void updateState(float Vp, float kFlow_int, float kFlow_exh, float Pout_int,
+                   float Pout_exh, float Tout_int, float Tout_exh);
+
+  float QPrime;
+  float nRPrime;
+  float VPrime;
 };
-
-// class Gas : public IdealGas {
-
-// public:
-//   Gas(float p, float v, float t, float o);
-
-//   float getOx() { return ox; };
-//   float SimpleFlow(float kFlow, float ext_pressure, float ext_temp,
-//                    float ext_ox, float dt);
-//   void InjectHeat(float kx, float dt);
-
-// private:
-//   float ox; // Oxygenation level [0, 1]
-// };
 
 #endif
