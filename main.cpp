@@ -17,8 +17,6 @@ constexpr float FRAMETIME = 25.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
 bool start = false;
 
-float engineSpeed = 0.f; // rpm
-
 int main(int argc, char *argv[]) {
 
   size_t gameLoopCnt = 0;
@@ -66,19 +64,19 @@ int main(int argc, char *argv[]) {
         const float t = 0.001f * (gameLoopCnt * FRAMETIME +
                                   i * FRAMETIME / SIMULATION_MULTIPLIER);
 
-        const float prevHeadAngle = piston->headAngle;
-        piston->updatePosition(deltaT, RPMToRADS(engineSpeed));
+        piston->updatePosition(deltaT);
 
         presLog->addSample(PAToATM(piston->gas->getP()));
         voluLog->addSample(M3ToCC(piston->gas->getV()));
         nrLog->addSample(piston->gas->getnR());
         tempLog->addSample(KELVToCELS(piston->gas->getT()));
 
-        if (piston->headAngle < prevHeadAngle) {
+        if (piston->cycleTrigger) {
           presLog->trig();
           voluLog->trig();
           nrLog->trig();
           tempLog->trig();
+          piston->cycleTrigger = false;
         }
 
         // End Simulation
@@ -94,13 +92,13 @@ int main(int argc, char *argv[]) {
     ImGui::Text("Framerate:  %.0f Hz", 1000.f / FRAMETIME);
     ImGui::Text("Simulation: %.0f Hz",
                 SIMULATION_MULTIPLIER * 1000.f / FRAMETIME);
-    ImGui::Text("DeltaT:  %.4f ms",
-                1000.f * getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME));
+    ImGui::Text("Engine Speed:  %.0f rpm", piston->state[1]);
     ImGui::Checkbox("Start", &start);
-    ImGui::SliderFloat("Engine Speed [rpm]", &engineSpeed, 0.f, 1000.f);
-    ImGui::SliderFloat("Intake Coef", &piston->intakeCoef, 0.f, 0.000100f,
+    ImGui::SliderFloat("External Torque [Nm]", &piston->externalTorque, 0.f,
+                       200.f);
+    ImGui::SliderFloat("Intake Coef", &piston->intakeCoef, 0.000012f, 0.0012f,
                        "%.6f");
-    ImGui::SliderFloat("Exhaust Coef", &piston->exhaustCoef, 0.f, 0.000100f,
+    ImGui::SliderFloat("Exhaust Coef", &piston->exhaustCoef, 0.000008f, 0.0008f,
                        "%.6f");
     ImGui::End();
 

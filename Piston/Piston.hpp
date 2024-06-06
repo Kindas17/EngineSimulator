@@ -37,6 +37,8 @@ public:
   /* Internal Clock */
   float internalTime;
 
+  std::valarray<float> state = {0.f, 0.f}; // Head angle, omega
+
   /* Specs */
   CylinderGeometry geometry;
   vector2_T rodFoot;
@@ -46,10 +48,8 @@ public:
 
   /* Dynamics */
   bool ignitionOn;
-  float omega;
-  float headAngle;
   float currentAngle;
-  void updatePosition(float deltaT, float setSpeed);
+  void updatePosition(float deltaT);
   void updateStatus(float deltaT);
   void ValveMgm();
   void applyExtTorque(float torque);
@@ -71,7 +71,6 @@ public:
   /* Thermodynamics */
   float V_prime;
   IdealGas *gas;
-  // Gas *gas;
   bool combustionInProgress;
   float kexpl;
 

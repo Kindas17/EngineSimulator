@@ -44,7 +44,7 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
     combustion.w = rescaleFactor * piston->geometry.bore;
     combustion.h = -combustion.y + pistonPos.y;
     SDL_SetRenderDrawColor(renderer, 64, 32, 0, 0);
-    if (piston->headAngle >= 180 - piston->combustionAdvance) {
+    if (piston->state[0] >= 180 - piston->combustionAdvance) {
       SDL_RenderFillRect(renderer, &combustion);
     }
   }
