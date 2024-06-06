@@ -122,7 +122,8 @@ int main(int argc, char *argv[]) {
     ImGui::Begin("Test6");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("Volume [cc]", voluLog->getData(), voluLog->getSize());
+    ImPlot::PlotLine("Thermodynamic Cycle", voluLog->getData(),
+                     presLog->getData(), presLog->getSize());
     ImPlot::EndPlot();
     ImGui::End();
 

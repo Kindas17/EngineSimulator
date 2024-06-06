@@ -40,8 +40,8 @@ Piston::Piston(CylinderGeometry geometryInfo) : omega{}, externalTorque{} {
   thermalK = 0.5f;
 
   // Valves
-  intakeCoef = 0.000012f;
-  exhaustCoef = 0.000008f;
+  intakeCoef = 0.00012f;
+  exhaustCoef = 0.00008f;
 
   /* Initial update to initialize the piston status */
   rodFoot = {.x = +(geometry.stroke / 2) * cosf(DEGToRAD(currentAngle)),
