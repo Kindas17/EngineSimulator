@@ -1,10 +1,10 @@
 #include "Game.hpp"
 
-Game::Game(const char *title, int xpos, int ypos, int height, int width) {
+Game::Game(const char *title, int xpos, int ypos, int height, int width)
+    : isRunning(true),
+      window(SDL_CreateWindow(title, xpos, ypos, width, height, 0)),
+      renderer(SDL_CreateRenderer(window, -1, 0)) {
   SDL_Init(SDL_INIT_EVERYTHING);
-  window = SDL_CreateWindow(title, xpos, ypos, width, height, 0);
-  renderer = SDL_CreateRenderer(window, -1, 0);
-  isRunning = true;
 }
 
 bool Game::isGameRunning() { return isRunning; }

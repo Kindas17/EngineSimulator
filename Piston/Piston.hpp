@@ -35,24 +35,21 @@ public:
   Piston(CylinderGeometry geometryInfo);
 
   /* Internal Clock */
-  float internalTime;
+  float internalTime{};
 
   std::valarray<float> state = {0.f, 0.f}; // Head angle, omega
 
   /* Specs */
   CylinderGeometry geometry;
-  vector2_T rodFoot;
+  vector2_T rodFoot{};
 
   float throttle;
   float minThrottle;
 
   /* Dynamics */
   bool ignitionOn;
-  float currentAngle;
-  void updatePosition(float deltaT);
-  void updateStatus(float deltaT);
+  void update(float deltaT);
   void ValveMgm();
-  void applyExtTorque(float torque);
   float externalTorque;
 
   float combustionAdvance;
@@ -65,21 +62,22 @@ public:
   float getEngineVolume();
   float getCompressionRatio();
   float getThetaAngle();
+  float getCurrentAngle();
   float getTorque();
   constexpr float getThrottle(float curr);
 
   /* Thermodynamics */
-  float V_prime;
+  float V_prime{};
   IdealGas *gas;
   bool combustionInProgress;
   float kexpl;
 
   /* Valves */
-  float intakeValve;
-  float exhaustValve;
-  float intakeFlow;
-  float exhaustFlow;
-  float leakageFlow;
+  float intakeValve{};
+  float exhaustValve{};
+  float intakeFlow{};
+  float exhaustFlow{};
+  float leakageFlow{};
   float intakeCoef;
   float exhaustCoef;
 
@@ -89,7 +87,7 @@ public:
   bool dynamicsIsActive;
 
   /* Triggers */
-  bool cycleTrigger;
+  bool cycleTrigger{};
 
 private:
 };

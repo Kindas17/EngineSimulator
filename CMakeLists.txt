@@ -1,34 +1,39 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.22)
 
 project(tutorial CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(tutorial main.cpp Game.cpp)
 
-add_compile_options(-Wall -Wextra)
+add_compile_options(
+  -Weverything
+  -Wno-c++98-compat
+  -Wno-double-promotion
+  -Wno-implicit-float-conversion
+  -Wno-float-conversion
+  -Wno-implicit-int-float-conversion
+  -Wno-c++98-compat-pedantic
+  -Wno-padded
+  -Wno-reorder-ctor)
 
 find_package(SDL2 REQUIRED)
 find_package(imgui REQUIRED)
 find_package(implot REQUIRED)
-
-# My libraries
 
 add_subdirectory(Piston)
 add_subdirectory(Logger)
 add_subdirectory(IdealGas)
 add_subdirectory(Solver)
 
-target_link_libraries(tutorial
-	PRIVATE
-	Piston
-	Logger
-	IdealGas
-	Solver
-
-	imgui::imgui
-	SDL2::SDL2
-	SDL2::SDL2main
-	implot::implot
-)
+target_link_libraries(
+  tutorial
+  PRIVATE Piston
+          Logger
+          IdealGas
+          Solver
+          imgui::imgui
+          SDL2::SDL2
+          SDL2::SDL2main
+          implot::implot)

@@ -1,7 +1,8 @@
 /build
 /out
 /.vs
-*.json
+CMakeUserPresets.json
+/.vscode
 
 # Required packages
 /imgui

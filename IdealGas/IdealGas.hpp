@@ -15,10 +15,10 @@ std::valarray<float> F(float t, std::valarray<float> &st, float VPrime,
 class IdealGas {
 
 public:
-  float getP() { return state[0]; };
-  float getV() { return state[1]; };
-  float getnR() { return state[2]; };
-  float getT() { return state[3]; };
+  float getP() { return state[0]; }
+  float getV() { return state[1]; }
+  float getnR() { return state[2]; }
+  float getT() { return state[3]; }
 
   IdealGas(float p, float v, float t);
 

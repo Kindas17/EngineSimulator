@@ -4,6 +4,9 @@
 #include <functional>
 #include <numbers>
 
+static std::valarray<float> F_piston(float t, std::valarray<float> &st,
+                                     float Ti, float Te);
+
 using namespace std::placeholders;
 
 constexpr float CRANKSHAFT_L = 25.0f;            /* [mm] */
@@ -20,10 +23,9 @@ inline float angleWrapper(float angle) {
   return angle;
 }
 
-std::valarray<float> F_piston(float t, std::valarray<float> &st, float Ti,
-                              float Te) {
+static std::valarray<float> F_piston(float t, std::valarray<float> &st,
+                                     float Ti, float Te) {
 
-  const float theta = st[0];
   const float omega = st[1];
 
   const float thetap = omega;
@@ -32,40 +34,22 @@ std::valarray<float> F_piston(float t, std::valarray<float> &st, float Ti,
   return std::valarray<float>{thetap, omegap};
 }
 
-Piston::Piston(CylinderGeometry geometryInfo) : externalTorque{} {
-  /* Piston Geometry */
-  this->geometry = geometryInfo;
+Piston::Piston(CylinderGeometry geometryInfo)
+    : geometry(geometryInfo), externalTorque{}, combustionAdvance(0.f),
+      gas(new IdealGas(101325.f, getChamberVolume(), 300.f)),
+      combustionInProgress(false), kexpl(0.07f), intakeCoef(0.00012f),
+      exhaustCoef(0.00008f), thermalK(0.5f), throttle(0.f),
+      dynamicsIsActive(false), minThrottle(0.075f), ignitionOn(false) {
 
   /* Dynamics */
   state = std::valarray<float>{35.f, 0.f};
-  currentAngle = state[0] * 2 + 90; /* Deg */
-
-  minThrottle = 0.075f;
-  throttle = 0.f;
-
-  ignitionOn = false;
-  combustionInProgress = false;
-  combustionAdvance = 0.f;
-  kexpl = 0.07f;
-
-  // Calibrations
-  thermalK = 0.5f;
-
-  // Valves
-  intakeCoef = 0.00012f;
-  exhaustCoef = 0.00008f;
 
   /* Initial update to initialize the piston status */
-  rodFoot = {.x = +(geometry.stroke / 2) * cosf(DEGToRAD(currentAngle)),
-             .y = -(geometry.stroke / 2) * sinf(DEGToRAD(currentAngle))};
-
-  /* Thermodynamics */
-  gas = new IdealGas(101325.f, getChamberVolume(), 300.f);
-
-  dynamicsIsActive = false;
+  rodFoot = {.x = +(geometry.stroke / 2) * cosf(DEGToRAD(getCurrentAngle())),
+             .y = -(geometry.stroke / 2) * sinf(DEGToRAD(getCurrentAngle()))};
 }
 
-void Piston::updatePosition(float deltaT) {
+void Piston::update(float deltaT) {
 
   // const float previousHeadAngle = headAngle;
   // headAngle +=
@@ -116,11 +100,10 @@ void Piston::updatePosition(float deltaT) {
 
   state = RungeKutta4(deltaT, 0.f, state, F2);
   state[0] = angleWrapper(state[0]);
-  currentAngle = angleWrapper(state[0] * 2 + 90);
 
   /* Update rod foot position */
-  rodFoot = {.x = +(geometry.stroke / 2) * cosf(DEGToRAD(currentAngle)),
-             .y = -(geometry.stroke / 2) * sinf(DEGToRAD(currentAngle))};
+  rodFoot = {.x = +(geometry.stroke / 2) * cosf(DEGToRAD(getCurrentAngle())),
+             .y = -(geometry.stroke / 2) * sinf(DEGToRAD(getCurrentAngle()))};
 
   V_prime = (getChamberVolume() - previousVolume) / deltaT;
 
@@ -130,25 +113,19 @@ void Piston::updatePosition(float deltaT) {
     combustionInProgress = false;
   }
 
-  updateStatus(deltaT);
-}
-
-void Piston::updateStatus(float deltaT) {
-
   // Update valve position
   ValveMgm();
 
+  // Update gas state
   gas->updateState(V_prime, intakeCoef * intakeValve,
                    exhaustCoef * exhaustValve, 101325.f, 101325.f, 300.f,
                    300.f);
 
-  std::function<std::valarray<float>(float, std::valarray<float> &)> F2 =
+  std::function<std::valarray<float>(float, std::valarray<float> &)> F3 =
       std::bind(F, _1, _2, gas->VPrime, gas->nRPrime, gas->QPrime);
 
-  gas->state = RungeKutta4(deltaT, 0.f, gas->state, F2);
+  gas->state = RungeKutta4(deltaT, 0.f, gas->state, F3);
 }
-
-void Piston::applyExtTorque(float torque) { externalTorque = torque; }
 
 void Piston::ValveMgm() {
   /* Intake Profile */
@@ -166,68 +143,75 @@ void Piston::ValveMgm() {
 
 float Piston::getPistonPosition() {
   const float a = rodFoot.y;
-  const float b = (geometry.stroke / 2) * (geometry.stroke / 2) *
-                  cosf(DEGToRAD(currentAngle)) * cosf(DEGToRAD(currentAngle));
-  const float c = b / (geometry.rod * geometry.rod);
-  const float d = geometry.rod * sqrtf(1 - c);
+  const float b =
+      pow(geometry.stroke * cos(DEGToRAD(getCurrentAngle())) * 0.5f, 2);
+  const float c = b / pow(geometry.rod, 2);
+  const float d = geometry.rod * sqrt(1 - c);
   return a - d;
 }
 
 float Piston::getCyclePercent() {
-  return (-getPistonPosition() - geometry.rod + geometry.stroke / 2) /
-         (geometry.stroke);
+  return (-getPistonPosition() - geometry.rod + geometry.stroke * 0.5f) /
+         geometry.stroke;
 }
 
 float Piston::getChamberVolume() {
-  const float constantVol = geometry.bore * geometry.bore * std::numbers::pi *
-                            0.25 * geometry.addStroke;
-  return (1 - getCyclePercent()) * std::numbers::pi * geometry.bore *
-             geometry.bore * geometry.stroke * 0.25 +
+
+  const float constantVol =
+      std::numbers::pi * pow(geometry.bore * 0.5f, 2) * geometry.addStroke;
+
+  return (1.f - getCyclePercent()) * std::numbers::pi * geometry.stroke *
+             pow(geometry.bore * 0.5f, 2) +
          constantVol;
 }
 
 float Piston::getMaxVolume() {
-  return std::numbers::pi * (geometry.bore) * (geometry.bore) *
-         (geometry.addStroke + geometry.stroke) * 0.25;
+
+  return std::numbers::pi * pow(geometry.bore * 0.5f, 2) *
+         (geometry.addStroke + geometry.stroke);
 }
 
 float Piston::getEngineVolume() {
-  return std::numbers::pi * (geometry.bore) * (geometry.bore) *
-         (geometry.stroke) * 0.25;
+
+  return std::numbers::pi * pow(geometry.bore * 0.5f, 2) * geometry.stroke;
 }
 
 float Piston::getCompressionRatio() {
-  return getMaxVolume() / (geometry.bore * geometry.bore * std::numbers::pi *
-                           0.25 * geometry.addStroke);
+
+  return getMaxVolume() /
+         (pow(geometry.bore * 0.5f, 2) * std::numbers::pi * geometry.addStroke);
 }
 
+float Piston::getCurrentAngle() { return angleWrapper(state[0] * 2.f + 90.f); }
+
 float Piston::getThetaAngle() {
-  return asinf(geometry.stroke / (2 * geometry.rod) *
-               cosf(DEGToRAD(currentAngle)));
+
+  return asin(geometry.stroke / (2.f * geometry.rod) *
+              cos(DEGToRAD(getCurrentAngle())));
 }
 
 float Piston::getTorque() {
+
   const float pistonSurface =
       (geometry.bore * geometry.bore * std::numbers::pi * 0.25f);
+
   const float topPistonPressure = gas->getP();
-  const float force = pistonSurface * (topPistonPressure - 101325.f) *
-                      std::cos(getThetaAngle());
+
+  const float force =
+      pistonSurface * (topPistonPressure - 101325.f) * cos(getThetaAngle());
 
   const float friction = -state[1] * 0.05f;
   const float absTorque = (force * geometry.stroke) / 2.f;
 
   return (getThetaAngle() < 0.f) ? absTorque + friction : -absTorque + friction;
-  // return 0.f;
 }
 
 constexpr float Piston::getThrottle(float curr) {
+
   return (1.f - minThrottle) * curr + minThrottle;
 }
 
-CylinderGeometry::CylinderGeometry() {
-  stroke = MMToM(CRANKSHAFT_L * 2.f);
-  addStroke = MMToM(ADD_STROKE);
-  rod = MMToM(BIELLA_L);
-  bore = MMToM(50.6);
-  momentOfInertia = 25 * (stroke / 2) * (stroke / 2);
-}
+CylinderGeometry::CylinderGeometry()
+    : stroke(MMToM(CRANKSHAFT_L * 2.f)), addStroke(MMToM(ADD_STROKE)),
+      rod(MMToM(BIELLA_L)), bore(MMToM(50.6f)),
+      momentOfInertia(25.f * pow(stroke * 0.5f, 2)) {}

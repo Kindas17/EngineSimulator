@@ -1,0 +1,1 @@
+Checks:          '-*,cppcoreguidelines-*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-narrowing-conversions,-cppcoreguidelines-owning-memory,-cppcoreguidelines-pro-type-vararg'

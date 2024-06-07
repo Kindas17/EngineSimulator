@@ -1,6 +1,6 @@
 #include "Logger.hpp"
 
-Logger::Logger(size_t max_size) { this->max_size = max_size; }
+Logger::Logger(std::size_t max_s) { max_size = max_s; }
 
 void Logger::addSample(float sample) {
   v.push_back(sample);
@@ -11,7 +11,7 @@ void Logger::addSample(float sample) {
 
 float *Logger::getData() { return v.data(); }
 
-int Logger::getSize() { return v.size(); }
+std::size_t Logger::getSize() { return v.size(); }
 
 void CycleLogger::addSample(float sample) {
   if (which == 0) {
@@ -29,7 +29,7 @@ float *CycleLogger::getData() {
   }
 }
 
-int CycleLogger::getSize() {
+std::size_t CycleLogger::getSize() {
   if (which == 0) {
     return b.size();
   } else {

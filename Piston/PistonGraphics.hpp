@@ -7,7 +7,7 @@
 
 class PistonGraphics {
 public:
-  PistonGraphics(vector2_T pos, Piston *piston, int rescaleFactor);
+  PistonGraphics(vector2_T pos, Piston *p, int rescaleFactor);
   void showPiston(SDL_Renderer *renderer);
   float getPistonPosition();
 

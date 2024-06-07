@@ -15,18 +15,15 @@ constexpr float getTimeStep_s(int mult, float frametime) {
 constexpr int SIMULATION_MULTIPLIER = 50;
 constexpr float FRAMETIME = 25.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
-bool start = false;
 
 int main(int argc, char *argv[]) {
 
+  bool start = false;
   size_t gameLoopCnt = 0;
-  printf("Program started\n");
 
   /* Game initialization */
   Game *game = new Game("Engine Simulator", SDL_WINDOWPOS_UNDEFINED,
                         SDL_WINDOWPOS_UNDEFINED, 1000, 1000);
-
-  printf("Game initialized\n");
 
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
@@ -35,8 +32,6 @@ int main(int argc, char *argv[]) {
   ImGuiIO &io = ImGui::GetIO();
   ImGui_ImplSDL2_InitForSDLRenderer(game->window, game->renderer);
   ImGui_ImplSDLRenderer2_Init(game->renderer);
-
-  printf("Start the game loop\n");
 
   CylinderGeometry *geom = new CylinderGeometry();
   Piston *piston = new Piston(*geom);
@@ -64,7 +59,7 @@ int main(int argc, char *argv[]) {
         const float t = 0.001f * (gameLoopCnt * FRAMETIME +
                                   i * FRAMETIME / SIMULATION_MULTIPLIER);
 
-        piston->updatePosition(deltaT);
+        piston->update(deltaT);
 
         presLog->addSample(PAToATM(piston->gas->getP()));
         voluLog->addSample(M3ToCC(piston->gas->getV()));

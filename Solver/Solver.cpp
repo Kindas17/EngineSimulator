@@ -1,3 +1,4 @@
+#include "Solver.hpp"
 #include <functional>
 #include <valarray>
 
