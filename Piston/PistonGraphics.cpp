@@ -15,8 +15,8 @@ float PistonGraphics::getPistonPosition() {
   const float a = rodFoot.y;
   const float b = (rescaleFactor * piston->geometry.stroke / 2.f) *
                   (rescaleFactor * piston->geometry.stroke / 2.f) *
-                  cosf(DEGToRAD(piston->getCurrentAngle())) *
-                  cosf(DEGToRAD(piston->getCurrentAngle()));
+                  cos(piston->getCurrentAngle()) *
+                  cos(piston->getCurrentAngle());
   const float c = b / (rescaleFactor * piston->geometry.rod * rescaleFactor *
                        piston->geometry.rod);
   const float d = rescaleFactor * piston->geometry.rod * sqrtf(1.f - c);
@@ -27,9 +27,9 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
   /* Update engine geometry */
   rodFoot = {
       .x = crankCenter.x + (rescaleFactor * piston->geometry.stroke / 2.f) *
-                               cosf(DEGToRAD(piston->getCurrentAngle())),
+                               cos(piston->getCurrentAngle()),
       .y = crankCenter.y - (rescaleFactor * piston->geometry.stroke / 2.f) *
-                               sinf(DEGToRAD(piston->getCurrentAngle()))};
+                               sin(piston->getCurrentAngle())};
 
   pistonPos = {.x = crankCenter.x, .y = getPistonPosition()};
 

@@ -33,6 +33,7 @@ target_link_libraries(
           Logger
           IdealGas
           Solver
+          Geometry
           imgui::imgui
           SDL2::SDL2
           SDL2::SDL2main
