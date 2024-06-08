@@ -35,10 +35,12 @@ int main(int argc, char *argv[]) {
 
   CylinderGeometry *geom = new CylinderGeometry();
   Piston *piston = new Piston(*geom);
-  Logger *presLog = new Logger(3000);
-  Logger *voluLog = new Logger(3000);
-  Logger *nrLog = new Logger(3000);
-  Logger *tempLog = new Logger(3000);
+  CycleLogger *inflowLog = new CycleLogger();
+  CycleLogger *outflowLog = new CycleLogger();
+  CycleLogger *presLog = new CycleLogger();
+  CycleLogger *voluLog = new CycleLogger();
+  CycleLogger *nrLog = new CycleLogger();
+  CycleLogger *tempLog = new CycleLogger();
 
   /* Game Loop */
   while (game->isGameRunning()) {
@@ -61,18 +63,22 @@ int main(int argc, char *argv[]) {
 
         piston->update(deltaT);
 
-        presLog->addSample(RADSToRPM(piston->state[1]));
-        voluLog->addSample(M3ToCC(piston->getChamberVolume()));
-        nrLog->addSample(M3ToCC(piston->gas->getV()));
-        tempLog->addSample(piston->state[0]);
+        presLog->addSample(PAToATM(piston->gas->getP()));
+        voluLog->addSample(M3ToCC(piston->gas->getV()));
+        nrLog->addSample(piston->gas->getnR());
+        tempLog->addSample(KELVToCELS(piston->gas->getT()));
+        inflowLog->addSample(piston->gas->intakeFlow);
+        outflowLog->addSample(piston->gas->exhaustFlow);
 
-        // if (piston->cycleTrigger) {
-        //   presLog->trig();
-        //   voluLog->trig();
-        //   nrLog->trig();
-        //   tempLog->trig();
-        //   piston->cycleTrigger = false;
-        // }
+        if (piston->cycleTrigger) {
+          presLog->trig();
+          voluLog->trig();
+          nrLog->trig();
+          tempLog->trig();
+          inflowLog->trig();
+          outflowLog->trig();
+          piston->cycleTrigger = false;
+        }
 
         // End Simulation
       }
@@ -87,7 +93,7 @@ int main(int argc, char *argv[]) {
     ImGui::Text("Framerate:  %.0f Hz", 1000.f / FRAMETIME);
     ImGui::Text("Simulation: %.0f Hz",
                 SIMULATION_MULTIPLIER * 1000.f / FRAMETIME);
-    ImGui::Text("Engine Speed:  %.0f rpm", RADSToRPM(piston->state[1]));
+    ImGui::Text("Engine Speed:  %.0f rpm", RADSToRPM(piston->getEngineSpeed()));
     ImGui::Checkbox("Start", &start);
     ImGui::SliderFloat("External Torque [Nm]", &piston->externalTorque, 0.f,
                        20.f);
@@ -100,33 +106,24 @@ int main(int argc, char *argv[]) {
     ImGui::Begin("Test4");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("Speed [rpm]", presLog->getData(), presLog->getSize());
+    ImPlot::PlotLine("Intake Flow", inflowLog->getData(), inflowLog->getSize());
+    ImPlot::PlotLine("Exhaust Flow", outflowLog->getData(),
+                     outflowLog->getSize());
     ImPlot::EndPlot();
     ImGui::End();
-
-    // ImGui::Begin("Test5");
-    // ImPlot::SetNextAxesToFit();
-    // ImPlot::BeginPlot("ASD");
-    // ImPlot::PlotLine("Temperature [°C]", tempLog->getData(),
-    //                  tempLog->getSize());
-    // ImPlot::EndPlot();
-    // ImGui::End();
 
     ImGui::Begin("Test6");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    // ImPlot::PlotLine("Thermodynamic Cycle", voluLog->getData(),
-    //                  presLog->getData(), presLog->getSize());
-    ImPlot::PlotLine("Volume Chamber", voluLog->getData(), voluLog->getSize());
-    ImPlot::PlotLine("Volume Gas", nrLog->getData(), nrLog->getSize());
+    ImPlot::PlotLine("Thermodynamic Cycle", voluLog->getData(),
+                     presLog->getData(), presLog->getSize());
     ImPlot::EndPlot();
     ImGui::End();
 
     ImGui::Begin("Test7");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    // ImPlot::PlotLine("Current Angle", nrLog->getData(), nrLog->getSize());
-    ImPlot::PlotLine("State[0]", tempLog->getData(), tempLog->getSize());
+    ImPlot::PlotLine("Temperature", tempLog->getData(), tempLog->getSize());
     ImPlot::EndPlot();
     ImGui::End();
 

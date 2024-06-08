@@ -49,7 +49,7 @@ Piston::Piston(CylinderGeometry geometryInfo)
 
 void Piston::update(float deltaT) {
 
-  const float previousHeadAngle = getCurrentAngle();
+  const float previousHeadAngle = getHeadAngle();
 
   std::function<std::valarray<float>(float, std::valarray<float> &)> F2 =
       std::bind(F_piston, _1, _2, getTorque() / geometry.momentOfInertia,
@@ -62,36 +62,40 @@ void Piston::update(float deltaT) {
   rodFoot = {.x = +(geometry.stroke / 2) * cos(getCurrentAngle()),
              .y = -(geometry.stroke / 2) * sin(getCurrentAngle())};
 
-  /* A full cycle of the engine has terminated */
-  if (previousHeadAngle > getCurrentAngle()) {
-    cycleTrigger = true;
-    combustionInProgress = false;
-  }
-
   // Update valve position
   ValveMgm();
 
   // Update gas state
-  gas->updateState(0.f, 0.f, 0.f, 101325.f, 101325.f, 300.f, 300.f);
+  gas->updateState(0.f, intakeValve * intakeCoef, exhaustCoef * exhaustValve,
+                   101325.f, 101325.f, 300.f, 300.f);
 
   std::function<std::valarray<float>(float, std::valarray<float> &)> F3 =
-      std::bind(F, _1, _2, getCurrentAngle(), state[1], geometry, 0.f, 0.f);
+      std::bind(F, _1, _2, getCurrentAngle(), state[1], geometry, gas->nRPrime,
+                gas->QPrime);
 
   gas->state = RungeKutta4(deltaT, 0.f, gas->state, F3);
+
+  /* A full cycle of the engine has terminated */
+  if (previousHeadAngle > getHeadAngle()) {
+    cycleTrigger = true;
+    combustionInProgress = false;
+  }
 }
 
 void Piston::ValveMgm() {
-  // /* Intake Profile */
-  // const float profileSpeed1 = 30;
-  // const float x_int =
-  //     (angleWrapper(state[0] - 180) - (45 + 180)) / profileSpeed1;
-  // intakeValve = expf(-(x_int * x_int));
+  using namespace std::numbers;
 
-  // /* Exhaust Profile */
-  // const float profileSpeed2 = 20;
-  // const float x_exh =
-  //     (angleWrapper(state[0] + 180) - (315 - 180)) / profileSpeed2;
-  // exhaustValve = expf(-(x_exh * x_exh));
+  /* Intake Profile */
+  const float profileSpeed1 = pi / 6.f;
+  const float x_int =
+      (angleWrapper(state[0] - pi) - (pi / 4.f + pi)) / profileSpeed1;
+  intakeValve = expf(-(x_int * x_int));
+
+  /* Exhaust Profile */
+  const float profileSpeed2 = DEGToRAD(20.f);
+  const float x_exh =
+      (angleWrapper(state[0] + pi) - (DEGToRAD(315) - pi)) / profileSpeed2;
+  exhaustValve = expf(-(x_exh * x_exh));
 }
 
 float Piston::getPistonPosition() {
@@ -138,6 +142,8 @@ float Piston::getCurrentAngle() {
   return angleWrapper(state[0] * 2.f + std::numbers::pi * 0.5f);
 }
 
+float Piston::getHeadAngle() { return state[0]; }
+
 float Piston::getThetaAngle() {
 
   return asin(geometry.stroke / (2.f * geometry.rod) * cos(getCurrentAngle()));
@@ -156,6 +162,8 @@ float Piston::getTorque() {
 
   return (getThetaAngle() < 0.f) ? absTorque + friction : -absTorque + friction;
 }
+
+float Piston::getEngineSpeed() { return state[1] * 2.f; }
 
 constexpr float Piston::getThrottle(float curr) {
 

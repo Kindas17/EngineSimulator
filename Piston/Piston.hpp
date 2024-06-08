@@ -22,11 +22,6 @@ class Piston {
 public:
   Piston(CylinderGeometry geometryInfo);
 
-  /* Internal Clock */
-  float internalTime{};
-
-  std::valarray<float> state = {0.f, 0.f}; // Head angle, omega
-
   /* Specs */
   CylinderGeometry geometry;
   vector2_T rodFoot{};
@@ -51,7 +46,9 @@ public:
   float getCompressionRatio();
   float getThetaAngle();
   float getCurrentAngle();
+  float getHeadAngle();
   float getTorque();
+  float getEngineSpeed();
   constexpr float getThrottle(float curr);
 
   /* Thermodynamics */
@@ -74,6 +71,7 @@ public:
   bool cycleTrigger{};
 
 private:
+  std::valarray<float> state = {0.f, 0.f}; // Head angle, omega head
 };
 
 #endif

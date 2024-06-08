@@ -54,20 +54,20 @@ void IdealGas::updateState(float Vp, float kFlow_int, float kFlow_exh,
   QPrime = 0.f;
 
   // Intake flow
-  const float nRPrime_Int = kFlow_int * (Pout_int - P);
+  intakeFlow = kFlow_int * (Pout_int - P);
 
   // Exhaust flow
-  const float nRPrime_Exh = kFlow_exh * (Pout_exh - P);
-  nRPrime = nRPrime_Int + nRPrime_Exh;
+  exhaustFlow = kFlow_exh * (Pout_exh - P);
+  nRPrime = intakeFlow + exhaustFlow;
 
   // Heat exchange: intake flow
-  QPrime += (nRPrime_Int > 0.f) ? alpha * nRPrime_Int * Tout_int
-                                : alpha * nRPrime_Int * T;
+  QPrime += (intakeFlow > 0.f) ? alpha * intakeFlow * Tout_int
+                               : alpha * intakeFlow * T;
 
   // Heat exchange: exhaust flow
-  QPrime += (nRPrime_Exh > 0.f) ? alpha * nRPrime_Exh * Tout_exh
-                                : alpha * nRPrime_Exh * T;
+  QPrime += (exhaustFlow > 0.f) ? alpha * exhaustFlow * Tout_exh
+                                : alpha * exhaustFlow * T;
 
   // Heat exchange: external world
-  QPrime += 0.003f * (300.f - T);
+  QPrime += 0.03f * (300.f - T);
 }

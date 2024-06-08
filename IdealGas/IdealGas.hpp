@@ -33,6 +33,9 @@ public:
   float QPrime;
   float nRPrime;
   float VPrime;
+
+  float intakeFlow;
+  float exhaustFlow;
 };
 
 #endif
