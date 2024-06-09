@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
   CycleLogger *voluLog = new CycleLogger();
   CycleLogger *nrLog = new CycleLogger();
   CycleLogger *tempLog = new CycleLogger();
+  CycleLogger *oxyLog = new CycleLogger();
 
   /* Game Loop */
   while (game->isGameRunning()) {
@@ -69,6 +70,7 @@ int main(int argc, char *argv[]) {
         tempLog->addSample(KELVToCELS(piston->gas->getT()));
         inflowLog->addSample(piston->gas->intakeFlow);
         outflowLog->addSample(piston->gas->exhaustFlow);
+        oxyLog->addSample(piston->gas->state[4]);
 
         if (piston->cycleTrigger) {
           presLog->trig();
@@ -77,6 +79,7 @@ int main(int argc, char *argv[]) {
           tempLog->trig();
           inflowLog->trig();
           outflowLog->trig();
+          oxyLog->trig();
           piston->cycleTrigger = false;
         }
 
@@ -109,6 +112,13 @@ int main(int argc, char *argv[]) {
     ImPlot::PlotLine("Intake Flow", inflowLog->getData(), inflowLog->getSize());
     ImPlot::PlotLine("Exhaust Flow", outflowLog->getData(),
                      outflowLog->getSize());
+    ImPlot::EndPlot();
+    ImGui::End();
+
+    ImGui::Begin("Test5");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Oxygenation", oxyLog->getData(), oxyLog->getSize());
     ImPlot::EndPlot();
     ImGui::End();
 

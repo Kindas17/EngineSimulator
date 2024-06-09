@@ -10,9 +10,9 @@ constexpr float ZERO_CELSIUS_IN_KELVIN = 273.15f;
 constexpr float PAToATM(float X) { return ((X) / DEFAULT_AMBIENT_PRESSURE); }
 constexpr float KELVToCELS(float X) { return ((X)-ZERO_CELSIUS_IN_KELVIN); }
 
-std::valarray<float> F(float t, std::valarray<float> &st, float ang,
-                       float omega, CylinderGeometry g, float nRPrime,
-                       float QPrime);
+std::valarray<float> F_IdealGas(float t, std::valarray<float> &st, float ang,
+                                float omega, CylinderGeometry g, float nRPrime,
+                                float QPrime);
 
 class IdealGas {
 
@@ -25,7 +25,10 @@ public:
   IdealGas(float p, float v, float t);
 
   static constexpr float alpha = 5.f / 2.f;
-  std::valarray<float> state = {0.f, 0.f, 0.f, 0.f};
+
+  // The last value is just to solve a stupid problem...
+  // Derived class Gas needs 5 elements here.
+  std::valarray<float> state = {0.f, 0.f, 0.f, 0.f, 0.f};
 
   void updateState(float Vp, float kFlow_int, float kFlow_exh, float Pout_int,
                    float Pout_exh, float Tout_int, float Tout_exh);

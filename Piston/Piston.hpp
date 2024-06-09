@@ -1,7 +1,7 @@
 #ifndef PISTON_HPP
 #define PISTON_HPP
+#include "Gas.hpp"
 #include "Geometry.hpp"
-#include "IdealGas.hpp"
 #include "Linalg.hpp"
 #include <numbers>
 
@@ -52,7 +52,8 @@ public:
   constexpr float getThrottle(float curr);
 
   /* Thermodynamics */
-  IdealGas *gas;
+  // IdealGas *gas;
+  Gas *gas;
   bool combustionInProgress;
 
   /* Valves */

@@ -44,7 +44,7 @@ Piston::Piston(CylinderGeometry geometryInfo)
   rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
              .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
 
-  gas = new IdealGas(101325.f, getChamberVolume(), 300.f);
+  gas = new Gas(101325.f, getChamberVolume(), 300.f, 1.f);
 }
 
 void Piston::update(float deltaT) {
@@ -67,11 +67,11 @@ void Piston::update(float deltaT) {
 
   // Update gas state
   gas->updateState(0.f, intakeValve * intakeCoef, exhaustCoef * exhaustValve,
-                   101325.f, 101325.f, 300.f, 300.f);
+                   101325.f, 101325.f, 300.f, 300.f, 1.f, 0.f);
 
   std::function<std::valarray<float>(float, std::valarray<float> &)> F3 =
-      std::bind(F, _1, _2, getCurrentAngle(), state[1], geometry, gas->nRPrime,
-                gas->QPrime);
+      std::bind(F_Gas, _1, _2, getCurrentAngle(), getEngineSpeed(), geometry,
+                gas->nRPrime, gas->QPrime, gas->oxPrime);
 
   gas->state = RungeKutta4(deltaT, 0.f, gas->state, F3);
 

@@ -12,9 +12,9 @@ IdealGas::IdealGas(float p, float v, float t) {
   state[2] = state[0] * state[1] / state[3];
 }
 
-std::valarray<float> F(float t, std::valarray<float> &st, float ang,
-                       float omega, CylinderGeometry g, float nRPrime,
-                       float QPrime) {
+std::valarray<float> F_IdealGas(float t, std::valarray<float> &st, float ang,
+                                float omega, CylinderGeometry g, float nRPrime,
+                                float QPrime) {
 
   const float a = IdealGas::alpha;
   const float P = st[0];
@@ -34,10 +34,7 @@ std::valarray<float> F(float t, std::valarray<float> &st, float ang,
   const float dx = dx_1 + dx_2;
   const float dcperc = -dx / h;
 
-  // I honestly don't know why there's a 2 here...
-  // But if you remove it it doens't work...
-  // The risk was calculated, but man.. am I bad at math..
-  const float Vp = -2.f * k * dcperc * omega;
+  const float Vp = -k * dcperc * omega;
   const float nRp = nRPrime;
   const float Tp = (QPrime - a * nRp * T - P * Vp) / (a * nR);
   const float Pp = (nRp * T + nR * Tp - P * Vp) / V;
