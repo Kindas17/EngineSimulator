@@ -42,7 +42,7 @@ std::valarray<float> F_IdealGas(float t, std::valarray<float> &st, float ang,
   return std::valarray<float>{Pp, Vp, nRp, Tp};
 }
 
-void IdealGas::updateState(float Vp, float kFlow_int, float kFlow_exh,
+void IdealGas::updateState(float kthermal, float kFlow_int, float kFlow_exh,
                            float Pout_int, float Pout_exh, float Tout_int,
                            float Tout_exh) {
 
@@ -66,5 +66,5 @@ void IdealGas::updateState(float Vp, float kFlow_int, float kFlow_exh,
                                 : alpha * exhaustFlow * T;
 
   // Heat exchange: external world
-  QPrime += 0.03f * (300.f - T);
+  QPrime += kthermal * (300.f - T);
 }

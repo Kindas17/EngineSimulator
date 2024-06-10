@@ -26,8 +26,8 @@ public:
   CylinderGeometry geometry;
   vector2_T rodFoot{};
 
-  float throttle;
-  float minThrottle;
+  float throttle{0.f};
+  float minThrottle{0.0075f};
 
   /* Dynamics */
   bool ignitionOn;
@@ -35,7 +35,10 @@ public:
   void ValveMgm();
   float externalTorque;
 
-  float combustionAdvance;
+  float combustionAdvance{DEGToRAD(7.5f)};
+  float combustionSpeed{150000.f};
+  float combustionEnergy{150.f};
+  float kthermal{2.5f};
 
   /* Generic Methods */
   float getPistonPosition();
@@ -57,13 +60,13 @@ public:
   bool combustionInProgress;
 
   /* Valves */
-  float intakeValve{};
-  float exhaustValve{};
+  float intakeValve;
+  float exhaustValve;
   float intakeFlow{};
   float exhaustFlow{};
   float leakageFlow{};
-  float intakeCoef;
-  float exhaustCoef;
+  float intakeCoef{0.0012f};
+  float exhaustCoef{0.0008f};
 
   /* Settings */
   bool dynamicsIsActive;

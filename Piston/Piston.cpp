@@ -31,20 +31,21 @@ static std::valarray<float> F_piston(float t, std::valarray<float> &st,
 }
 
 Piston::Piston(CylinderGeometry geometryInfo)
-    : externalTorque{}, combustionAdvance(0.f), combustionInProgress(false),
-      intakeCoef(0.00012f), exhaustCoef(0.00008f), throttle(0.f),
-      dynamicsIsActive(false), minThrottle(0.075f), ignitionOn(false) {
+    : externalTorque{}, combustionInProgress(false), throttle(0.f),
+      dynamicsIsActive(false), ignitionOn(false) {
 
   geometry = geometryInfo;
 
   /* Dynamics */
-  state = std::valarray<float>{DEGToRAD(25.f), 0.f};
+  state = std::valarray<float>{DEGToRAD(0.f), 0.f};
 
   /* Initial update to initialize the piston status */
   rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
              .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
 
   gas = new Gas(101325.f, getChamberVolume(), 300.f, 1.f);
+
+  ignitionOn = true;
 }
 
 void Piston::update(float deltaT) {
@@ -59,21 +60,28 @@ void Piston::update(float deltaT) {
   state[0] = angleWrapper(state[0]);
 
   /* Update rod foot position */
-  rodFoot = {.x = +(geometry.stroke / 2) * cos(getCurrentAngle()),
-             .y = -(geometry.stroke / 2) * sin(getCurrentAngle())};
+  rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
+             .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
 
   // Update valve position
   ValveMgm();
 
   // Update gas state
-  gas->updateState(0.f, intakeValve * intakeCoef, exhaustCoef * exhaustValve,
-                   101325.f, 101325.f, 300.f, 300.f, 1.f, 0.f);
+  gas->updateState(kthermal, getThrottle(throttle) * intakeValve * intakeCoef,
+                   exhaustCoef * exhaustValve, 101325.f, 101325.f, 300.f, 300.f,
+                   1.f, 0.f, combustionInProgress ? combustionSpeed : 0.f,
+                   combustionEnergy);
 
   std::function<std::valarray<float>(float, std::valarray<float> &)> F3 =
       std::bind(F_Gas, _1, _2, getCurrentAngle(), getEngineSpeed(), geometry,
                 gas->nRPrime, gas->QPrime, gas->oxPrime);
 
   gas->state = RungeKutta4(deltaT, 0.f, gas->state, F3);
+
+  // Spark plug event
+  if (ignitionOn && getHeadAngle() > std::numbers::pi - combustionAdvance) {
+    combustionInProgress = true;
+  }
 
   /* A full cycle of the engine has terminated */
   if (previousHeadAngle > getHeadAngle()) {

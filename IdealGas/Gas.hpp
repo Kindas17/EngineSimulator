@@ -13,9 +13,10 @@ public:
 
   Gas(float p, float v, float t, float o);
 
-  void updateState(float Vp, float kFlow_int, float kFlow_exh, float Pout_int,
-                   float Pout_exh, float Tout_int, float Tout_exh, float ox_int,
-                   float ox_exh);
+  void updateState(float kthermal, float kFlow_int, float kFlow_exh,
+                   float Pout_int, float Pout_exh, float Tout_int,
+                   float Tout_exh, float ox_int, float ox_exh, float kcs,
+                   float kce);
 };
 
 #endif

@@ -12,7 +12,7 @@ constexpr float getTimeStep_s(int mult, float frametime) {
   return frametime / (1000.f * mult);
 }
 
-constexpr int SIMULATION_MULTIPLIER = 50;
+constexpr int SIMULATION_MULTIPLIER = 200;
 constexpr float FRAMETIME = 25.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
 
@@ -98,12 +98,17 @@ int main(int argc, char *argv[]) {
                 SIMULATION_MULTIPLIER * 1000.f / FRAMETIME);
     ImGui::Text("Engine Speed:  %.0f rpm", RADSToRPM(piston->getEngineSpeed()));
     ImGui::Checkbox("Start", &start);
+    ImGui::Checkbox("Ignition", &piston->ignitionOn);
     ImGui::SliderFloat("External Torque [Nm]", &piston->externalTorque, 0.f,
                        20.f);
-    ImGui::SliderFloat("Intake Coef", &piston->intakeCoef, 0.000012f, 0.0012f,
+    ImGui::SliderFloat("Intake Coef", &piston->intakeCoef, 0.00012f, 0.0012f,
                        "%.6f");
-    ImGui::SliderFloat("Exhaust Coef", &piston->exhaustCoef, 0.000008f, 0.0008f,
+    ImGui::SliderFloat("Exhaust Coef", &piston->exhaustCoef, 0.00008f, 0.0008f,
                        "%.6f");
+    ImGui::SliderFloat("Throttle", &piston->throttle, 0.f, 1.f);
+    ImGui::InputFloat("Combustion speed", &piston->combustionSpeed);
+    ImGui::InputFloat("Combustion energy", &piston->combustionEnergy);
+    ImGui::InputFloat("Thermal conductivity", &piston->kthermal);
     ImGui::End();
 
     ImGui::Begin("Test4");

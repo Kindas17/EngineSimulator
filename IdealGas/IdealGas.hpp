@@ -30,8 +30,9 @@ public:
   // Derived class Gas needs 5 elements here.
   std::valarray<float> state = {0.f, 0.f, 0.f, 0.f, 0.f};
 
-  void updateState(float Vp, float kFlow_int, float kFlow_exh, float Pout_int,
-                   float Pout_exh, float Tout_int, float Tout_exh);
+  void updateState(float kthermal, float kFlow_int, float kFlow_exh,
+                   float Pout_int, float Pout_exh, float Tout_int,
+                   float Tout_exh);
 
   float QPrime;
   float nRPrime;
