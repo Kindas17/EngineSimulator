@@ -165,7 +165,7 @@ float Piston::getTorque() {
   const float force =
       pistonSurface * (topPistonPressure - 101325.f) * cos(getThetaAngle());
 
-  const float friction = -state[1] * 0.05f;
+  const float friction = -state[1] * 0.01f;
   const float absTorque = (force * geometry.stroke) / 2.f;
 
   return (getThetaAngle() < 0.f) ? absTorque + friction : -absTorque + friction;

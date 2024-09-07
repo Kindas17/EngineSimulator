@@ -8,4 +8,4 @@ constexpr float ADD_STROKE = CRANKSHAFT_L / 3.f; /* No Unit */
 CylinderGeometry::CylinderGeometry()
     : stroke(MMToM(CRANKSHAFT_L * 2.f)), addStroke(MMToM(ADD_STROKE)),
       rod(MMToM(BIELLA_L)), bore(MMToM(50.6f)),
-      momentOfInertia(100.f * pow(stroke * 0.5f, 2)) {}
+      momentOfInertia(30.f * pow(stroke * 0.5f, 2)) {}

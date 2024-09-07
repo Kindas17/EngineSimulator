@@ -27,7 +27,7 @@ public:
   vector2_T rodFoot{};
 
   float throttle{0.f};
-  float minThrottle{0.0075f};
+  float minThrottle{0.0045f};
 
   /* Dynamics */
   bool ignitionOn;
@@ -36,9 +36,9 @@ public:
   float externalTorque;
 
   float combustionAdvance{DEGToRAD(7.5f)};
-  float combustionSpeed{150000.f};
-  float combustionEnergy{150.f};
-  float kthermal{2.5f};
+  float combustionSpeed{50000.f};
+  float combustionEnergy{300.f};
+  float kthermal{1.0f};
 
   /* Generic Methods */
   float getPistonPosition();
