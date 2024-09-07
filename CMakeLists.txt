@@ -16,7 +16,8 @@ add_compile_options(
   -Wno-implicit-int-float-conversion
   -Wno-c++98-compat-pedantic
   -Wno-padded
-  -Wno-reorder-ctor)
+  -Wno-reorder-ctor
+  -fPIC)
 
 find_package(SDL2 REQUIRED)
 find_package(imgui REQUIRED)
@@ -29,6 +30,19 @@ add_subdirectory(Solver)
 
 target_link_libraries(
   tutorial
+  PRIVATE Piston
+          Logger
+          IdealGas
+          Solver
+          Geometry
+          imgui::imgui
+          SDL2::SDL2
+          SDL2::SDL2main
+          implot::implot)
+
+add_library(torqueCurve SHARED EngineLib.cpp)
+target_link_libraries(
+  torqueCurve
   PRIVATE Piston
           Logger
           IdealGas

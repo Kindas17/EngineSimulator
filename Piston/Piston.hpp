@@ -21,6 +21,7 @@ constexpr float RPMToRADS(float X) {
 class Piston {
 public:
   Piston(CylinderGeometry geometryInfo);
+  Piston(CylinderGeometry geometryInfo, float omega0);
 
   /* Specs */
   CylinderGeometry geometry;
@@ -35,7 +36,7 @@ public:
   void ValveMgm();
   float externalTorque;
 
-  float combustionAdvance{DEGToRAD(7.5f)};
+  float combustionAdvance{DEGToRAD(10.f)};
   float combustionSpeed{50000.f};
   float combustionEnergy{300.f};
   float kthermal{1.0f};

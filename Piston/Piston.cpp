@@ -25,7 +25,8 @@ static std::valarray<float> F_piston(float t, std::valarray<float> &st,
   const float omega = st[1];
 
   const float thetap = omega;
-  const float omegap = Ti + Te;
+  const float omegap = 0.f; // Ti + Te;
+  // const float omegap = Ti + Te;
 
   return std::valarray<float>{thetap, omegap};
 }
@@ -38,6 +39,24 @@ Piston::Piston(CylinderGeometry geometryInfo)
 
   /* Dynamics */
   state = std::valarray<float>{DEGToRAD(0.f), 0.f};
+
+  /* Initial update to initialize the piston status */
+  rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
+             .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
+
+  gas = new Gas(101325.f, getChamberVolume(), 300.f, 1.f);
+
+  ignitionOn = true;
+}
+
+Piston::Piston(CylinderGeometry geometryInfo, float omega0)
+    : externalTorque{}, combustionInProgress(false), throttle(0.f),
+      dynamicsIsActive(false), ignitionOn(false) {
+
+  geometry = geometryInfo;
+
+  /* Dynamics */
+  state = std::valarray<float>{DEGToRAD(0.f), omega0};
 
   /* Initial update to initialize the piston status */
   rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
