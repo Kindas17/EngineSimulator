@@ -35,6 +35,7 @@ public:
   void update(float deltaT);
   void ValveMgm();
   float externalTorque;
+  bool killDynamics{false};
 
   float combustionAdvance{DEGToRAD(10.f)};
   float combustionSpeed{50000.f};
@@ -54,6 +55,8 @@ public:
   float getTorque();
   float getEngineSpeed();
   constexpr float getThrottle(float curr);
+
+  void setEngineSpeed(float omega);
 
   /* Thermodynamics */
   // IdealGas *gas;

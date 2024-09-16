@@ -25,15 +25,14 @@ static std::valarray<float> F_piston(float t, std::valarray<float> &st,
   const float omega = st[1];
 
   const float thetap = omega;
-  const float omegap = 0.f; // Ti + Te;
-  // const float omegap = Ti + Te;
+  const float omegap = Ti + Te;
 
   return std::valarray<float>{thetap, omegap};
 }
 
 Piston::Piston(CylinderGeometry geometryInfo)
     : externalTorque{}, combustionInProgress(false), throttle(0.f),
-      dynamicsIsActive(false), ignitionOn(false) {
+      dynamicsIsActive(false) {
 
   geometry = geometryInfo;
 
@@ -51,12 +50,13 @@ Piston::Piston(CylinderGeometry geometryInfo)
 
 Piston::Piston(CylinderGeometry geometryInfo, float omega0)
     : externalTorque{}, combustionInProgress(false), throttle(0.f),
-      dynamicsIsActive(false), ignitionOn(false) {
+      dynamicsIsActive(false) {
 
   geometry = geometryInfo;
 
   /* Dynamics */
   state = std::valarray<float>{DEGToRAD(0.f), omega0};
+  killDynamics = true;
 
   /* Initial update to initialize the piston status */
   rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
@@ -72,8 +72,10 @@ void Piston::update(float deltaT) {
   const float previousHeadAngle = getHeadAngle();
 
   std::function<std::valarray<float>(float, std::valarray<float> &)> F2 =
-      std::bind(F_piston, _1, _2, getTorque() / geometry.momentOfInertia,
-                externalTorque / geometry.momentOfInertia);
+      std::bind(F_piston, _1, _2,
+                killDynamics ? 0.0f : (getTorque() / geometry.momentOfInertia),
+                killDynamics ? 0.0f
+                             : (externalTorque / geometry.momentOfInertia));
 
   state = RungeKutta4(deltaT, 0.f, state, F2);
   state[0] = angleWrapper(state[0]);
@@ -196,3 +198,5 @@ constexpr float Piston::getThrottle(float curr) {
 
   return (1.f - minThrottle) * curr + minThrottle;
 }
+
+void Piston::setEngineSpeed(float omega) { state[1] = omega * 0.5f; }

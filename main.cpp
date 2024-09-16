@@ -12,7 +12,7 @@ constexpr float getTimeStep_s(int mult, float frametime) {
   return frametime / (1000.f * mult);
 }
 
-constexpr int SIMULATION_MULTIPLIER = 200;
+constexpr int SIMULATION_MULTIPLIER = 800;
 constexpr float FRAMETIME = 25.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
 

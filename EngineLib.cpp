@@ -3,17 +3,35 @@
 #include <iostream>
 #include <vector>
 
-constexpr float getTimeStep_s(int mult, float frametime) {
-  return frametime / (1000.f * mult);
+// Setting up the engine
+CylinderGeometry *geom = new CylinderGeometry();
+Piston *piston = new Piston(*geom, 0.0f);
+
+void engineReset() {
+  geom = new CylinderGeometry();
+  piston = new Piston(*geom, 0.0f);
 }
+
+extern "C" void setCombustionAdvance(float advance) {
+  piston->combustionAdvance = advance;
+}
+
+extern "C" void setIntakeExhaustCoefs(float intakeCoef, float exhaustCoef) {
+  piston->intakeCoef = intakeCoef;
+  piston->exhaustCoef = exhaustCoef;
+}
+
+extern "C" void setCombustionSpeed(float speed) {
+  piston->combustionSpeed = speed;
+}
+
+extern "C" void setThrottle(float throttle) { piston->throttle = throttle; }
 
 extern "C" float GetTorqueAtSpeed(float omega, int iterations) {
 
   // Setting up the engine
-  CylinderGeometry *geom = new CylinderGeometry();
-  Piston *piston = new Piston(*geom, omega);
+  piston->setEngineSpeed(omega);
   piston->ignitionOn = true;
-  piston->throttle = 1.f;
 
   // Setting up the simulation
   const float stepsPerCycle = 1000;
@@ -30,7 +48,7 @@ extern "C" float GetTorqueAtSpeed(float omega, int iterations) {
   std::vector<float> torqueProfile;
   int reps = 0;
 
-  while (reps < iterations) {
+  while (reps < iterations + 1) {
     for (size_t j = 0; j < stepsPerCycle; ++j) {
 
       piston->update(deltaT);
@@ -38,9 +56,12 @@ extern "C" float GetTorqueAtSpeed(float omega, int iterations) {
 
       if (piston->cycleTrigger) {
 
-        // Save the entire torque profile
-        for (size_t i = 0; i < torqueLog->getSize(); ++i) {
-          torqueProfile.push_back(torqueLog->getData()[i]);
+        // Skip the first trigger as it might be strange
+        if (reps != 0) {
+          // Save the entire torque profile
+          for (size_t i = 0; i < torqueLog->getSize(); ++i) {
+            torqueProfile.push_back(torqueLog->getData()[i]);
+          }
         }
 
         torqueLog->trig();
@@ -54,6 +75,8 @@ extern "C" float GetTorqueAtSpeed(float omega, int iterations) {
   for (size_t i = 0; i < torqueProfile.size(); ++i) {
     outputTorque += torqueProfile[i];
   }
+
+  engineReset();
 
   return outputTorque / torqueProfile.size();
 }
