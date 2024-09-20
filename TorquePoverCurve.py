@@ -8,9 +8,9 @@ def DEGToRAD(deg):
 
 
 def engineSetup(lib):
-    lib.setCombustionAdvance(c_float(DEGToRAD(15)))
-    lib.setIntakeExhaustCoefs(c_float(0.00008), c_float(0.00008))
-    lib.setCombustionSpeed(c_float(15000))
+    lib.setCombustionAdvance(c_float(DEGToRAD(10)))
+    lib.setIntakeExhaustCoefs(c_float(0.03), c_float(0.03))
+    lib.setCombustionSpeed(c_float(50000))
     lib.setThrottle(c_float(1))
 
 

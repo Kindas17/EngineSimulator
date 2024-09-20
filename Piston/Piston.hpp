@@ -28,7 +28,7 @@ public:
   vector2_T rodFoot{};
 
   float throttle{0.f};
-  float minThrottle{0.0045f};
+  float minThrottle{0.014f};
 
   /* Dynamics */
   bool ignitionOn;
@@ -69,8 +69,8 @@ public:
   float intakeFlow{};
   float exhaustFlow{};
   float leakageFlow{};
-  float intakeCoef{0.0012f};
-  float exhaustCoef{0.0008f};
+  float intakeCoef{0.03f};
+  float exhaustCoef{0.02f};
 
   /* Settings */
   bool dynamicsIsActive;

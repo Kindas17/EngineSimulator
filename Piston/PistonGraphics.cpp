@@ -95,7 +95,8 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
   destRect.y = pistonPos.y;                                      // y position
   destRect.w =
       rescaleFactor * piston->geometry.bore; // width of the texture on screen
-  destRect.h = 35;                           // height of the texture on screen
+  destRect.h = rescaleFactor * piston->geometry.bore *
+               0.7f; // height of the texture on screen
   SDL_RenderCopy(renderer, texture, nullptr, &destRect);
 
   /* Draw Intake Valve */

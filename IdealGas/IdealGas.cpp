@@ -50,11 +50,29 @@ void IdealGas::updateState(float kthermal, float kFlow_int, float kFlow_exh,
   const float T = state[3];
   QPrime = 0.f;
 
+  // rho = P * M_air / (R * T)
+  const float R = 8.314;     // Ideal gas constant
+  const float M_air = 0.029; // Approx molar mass of air in kg/mol
+  const float rho_intake = Pout_int * M_air / (R * Tout_int);
+  const float rho_chamber = P * M_air / (R * T);
+  const float rho_exhaust = Pout_exh * M_air / (R * Tout_exh);
+
   // Intake flow
-  intakeFlow = kFlow_int * (Pout_int - P);
+  // intakeFlow = kFlow_int * (Pout_int - P);
+  if (Pout_int > P) {
+    intakeFlow = kFlow_int * sqrt(2 * (Pout_int - P) / rho_intake);
+  } else {
+    intakeFlow = -kFlow_int * sqrt(2 * (P - Pout_int) / rho_chamber);
+  }
 
   // Exhaust flow
-  exhaustFlow = kFlow_exh * (Pout_exh - P);
+  // exhaustFlow = kFlow_exh * (Pout_exh - P);
+  if (Pout_exh > P) {
+    exhaustFlow = kFlow_exh * sqrt(2 * (Pout_exh - P) / rho_chamber);
+  } else {
+    exhaustFlow = -kFlow_exh * sqrt(2 * (P - Pout_exh) / rho_exhaust);
+  }
+
   nRPrime = intakeFlow + exhaustFlow;
 
   // Heat exchange: intake flow
