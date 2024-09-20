@@ -3,6 +3,7 @@
 #include "Linalg.hpp"
 #include "Piston.hpp"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 
 class PistonGraphics {
@@ -18,6 +19,8 @@ public:
   vector2_T rodFoot;
   vector2_T pistonPos;
   vector2_T cilinderRectPos;
+
+  SDL_Surface *loadedSurface;
 
   int rescaleFactor;
 };

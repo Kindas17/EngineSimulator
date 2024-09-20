@@ -20,6 +20,7 @@ add_compile_options(
   -fPIC)
 
 find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
 find_package(imgui REQUIRED)
 find_package(implot REQUIRED)
 
@@ -38,6 +39,7 @@ target_link_libraries(
           imgui::imgui
           SDL2::SDL2
           SDL2::SDL2main
+          SDL2_image::SDL2_image-static
           implot::implot)
 
 add_library(torqueCurve SHARED EngineLib.cpp)
@@ -51,4 +53,5 @@ target_link_libraries(
           imgui::imgui
           SDL2::SDL2
           SDL2::SDL2main
+          SDL2_image::SDL2_image-static
           implot::implot)

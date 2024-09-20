@@ -9,6 +9,12 @@ PistonGraphics::PistonGraphics(vector2_T pos, Piston *p, int rFactor) {
   this->cilinderRectPos = pos;
   this->cilinderRectPos.y -= rescaleFactor * p->geometry.rod +
                              rescaleFactor * p->geometry.stroke / 2.f;
+
+  // Load an image into a surface
+  loadedSurface = IMG_Load("piston.png");
+  if (!loadedSurface) {
+    SDL_Log("Unable to load image! SDL_image Error: %s", IMG_GetError());
+  }
 }
 
 float PistonGraphics::getPistonPosition() {
@@ -74,6 +80,23 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
       renderer, pistonPos.x - rescaleFactor * piston->geometry.bore / 2.f,
       pistonPos.y, pistonPos.x + rescaleFactor * piston->geometry.bore / 2.f,
       pistonPos.y);
+
+  // Convert surface to texture
+  SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, loadedSurface);
+  if (!texture) {
+    SDL_Log("Unable to create texture from surface! SDL_Error: %s",
+            SDL_GetError());
+  }
+
+  // Copy the texture to the rendering target (the window)
+  SDL_Rect destRect;
+  destRect.x =
+      pistonPos.x - rescaleFactor * piston->geometry.bore / 2.f; // x position
+  destRect.y = pistonPos.y;                                      // y position
+  destRect.w =
+      rescaleFactor * piston->geometry.bore; // width of the texture on screen
+  destRect.h = 35;                           // height of the texture on screen
+  SDL_RenderCopy(renderer, texture, nullptr, &destRect);
 
   /* Draw Intake Valve */
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);

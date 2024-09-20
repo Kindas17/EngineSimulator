@@ -43,6 +43,16 @@ int main(int argc, char *argv[]) {
   CycleLogger *tempLog = new CycleLogger();
   CycleLogger *oxyLog = new CycleLogger();
 
+  // Initialize SDL_image (supports PNG, JPG, etc.)
+  if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
+    SDL_Log("SDL_image could not initialize! SDL_image Error: %s",
+            IMG_GetError());
+    SDL_DestroyRenderer(game->renderer);
+    SDL_DestroyWindow(game->window);
+    SDL_Quit();
+    return -1;
+  }
+
   /* Game Loop */
   while (game->isGameRunning()) {
 
