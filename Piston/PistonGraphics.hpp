@@ -20,7 +20,8 @@ public:
   vector2_T pistonPos;
   vector2_T cilinderRectPos;
 
-  SDL_Surface *loadedSurface;
+  SDL_Surface *pistonSurface;
+  SDL_Surface *rodSurface;
 
   int rescaleFactor;
 };

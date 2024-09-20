@@ -11,8 +11,13 @@ PistonGraphics::PistonGraphics(vector2_T pos, Piston *p, int rFactor) {
                              rescaleFactor * p->geometry.stroke / 2.f;
 
   // Load an image into a surface
-  loadedSurface = IMG_Load("piston.png");
-  if (!loadedSurface) {
+  pistonSurface = IMG_Load("piston.png");
+  if (!pistonSurface) {
+    SDL_Log("Unable to load image! SDL_image Error: %s", IMG_GetError());
+  }
+  // Load an image into a surface
+  rodSurface = IMG_Load("rod.png");
+  if (!rodSurface) {
     SDL_Log("Unable to load image! SDL_image Error: %s", IMG_GetError());
   }
 }
@@ -76,14 +81,21 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
   /* Draw the rod and the piston */
   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
   SDL_RenderDrawLine(renderer, rodFoot.x, rodFoot.y, pistonPos.x, pistonPos.y);
-  SDL_RenderDrawLine(
-      renderer, pistonPos.x - rescaleFactor * piston->geometry.bore / 2.f,
-      pistonPos.y, pistonPos.x + rescaleFactor * piston->geometry.bore / 2.f,
-      pistonPos.y);
+  // SDL_RenderDrawLine(
+  //     renderer, pistonPos.x - rescaleFactor * piston->geometry.bore / 2.f,
+  //     pistonPos.y, pistonPos.x + rescaleFactor * piston->geometry.bore / 2.f,
+  //     pistonPos.y);
 
   // Convert surface to texture
-  SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, loadedSurface);
-  if (!texture) {
+  SDL_Texture *pistonTexture =
+      SDL_CreateTextureFromSurface(renderer, pistonSurface);
+  if (!pistonTexture) {
+    SDL_Log("Unable to create texture from surface! SDL_Error: %s",
+            SDL_GetError());
+  }
+  // Convert surface to texture
+  SDL_Texture *rodTexture = SDL_CreateTextureFromSurface(renderer, rodSurface);
+  if (!rodTexture) {
     SDL_Log("Unable to create texture from surface! SDL_Error: %s",
             SDL_GetError());
   }
@@ -97,7 +109,17 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
       rescaleFactor * piston->geometry.bore; // width of the texture on screen
   destRect.h = rescaleFactor * piston->geometry.bore *
                0.7f; // height of the texture on screen
-  SDL_RenderCopy(renderer, texture, nullptr, &destRect);
+  SDL_RenderCopy(renderer, pistonTexture, nullptr, &destRect);
+
+  // Copy the texture to the rendering target (the window)
+  destRect.x = rodFoot.x - 25; // x
+  destRect.y = rodFoot.y - 60; // y
+  destRect.w = 50;             // width of the texture on
+  destRect.h = 80;             // height of the texture on screen
+  // SDL_RenderCopy(renderer, rodTexture, nullptr, &destRect);
+  SDL_Point center = {(int)destRect.x, (int)destRect.y};
+  SDL_RenderCopyEx(renderer, rodTexture, nullptr, &destRect,
+                   RADToDEG(-piston->getThetaAngle()), nullptr, SDL_FLIP_NONE);
 
   /* Draw Intake Valve */
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
