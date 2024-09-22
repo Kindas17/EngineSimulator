@@ -11,12 +11,12 @@ PistonGraphics::PistonGraphics(vector2_T pos, Piston *p, int rFactor) {
                              rescaleFactor * p->geometry.stroke / 2.f;
 
   // Load an image into a surface
-  pistonSurface = IMG_Load("piston.png");
+  pistonSurface = IMG_Load("assets/piston.png");
   if (!pistonSurface) {
     SDL_Log("Unable to load image! SDL_image Error: %s", IMG_GetError());
   }
   // Load an image into a surface
-  rodSurface = IMG_Load("rod.png");
+  rodSurface = IMG_Load("assets/rod.png");
   if (!rodSurface) {
     SDL_Log("Unable to load image! SDL_image Error: %s", IMG_GetError());
   }
@@ -42,6 +42,8 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
       .y = crankCenter.y - (rescaleFactor * piston->geometry.stroke / 2.f) *
                                sin(piston->getCurrentAngle())};
 
+  // Distance between piston head and connecting rod head
+  const float pistonOverHead = 40.f;
   pistonPos = {.x = crankCenter.x, .y = getPistonPosition()};
 
   /* Combustion */
@@ -49,8 +51,9 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
     SDL_Rect combustion;
     combustion.x =
         cilinderRectPos.x - rescaleFactor * piston->geometry.bore / 2.f;
-    combustion.y =
-        cilinderRectPos.y - piston->geometry.addStroke * rescaleFactor + 2.f;
+    combustion.y = cilinderRectPos.y -
+                   piston->geometry.addStroke * rescaleFactor + 2.f -
+                   pistonOverHead;
     combustion.w = rescaleFactor * piston->geometry.bore;
     combustion.h = -combustion.y + pistonPos.y;
     SDL_SetRenderDrawColor(renderer, 64, 32, 0, 0);
@@ -65,12 +68,13 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
   SDL_RenderDrawLine(renderer, crankCenter.x, crankCenter.y, rodFoot.x,
                      rodFoot.y);
   SDL_SetRenderDrawColor(renderer, 64, 64, 64, 0);
+
   /* Draw the cylinder */
   SDL_Rect cylinder;
   SDL_Rect addStroke;
   cylinder.x = cilinderRectPos.x - rescaleFactor * piston->geometry.bore / 2.f;
-  cylinder.y = cilinderRectPos.y;
-  cylinder.h = rescaleFactor * piston->geometry.stroke;
+  cylinder.y = cilinderRectPos.y - pistonOverHead;
+  cylinder.h = rescaleFactor * piston->geometry.stroke + pistonOverHead;
   cylinder.w = rescaleFactor * piston->geometry.bore;
   addStroke.x = cylinder.x;
   addStroke.y = cylinder.y - piston->geometry.addStroke * rescaleFactor + 2.f;
@@ -78,13 +82,20 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
   addStroke.w = cylinder.w;
   SDL_RenderDrawRect(renderer, &cylinder);
   SDL_RenderDrawRect(renderer, &addStroke);
-  /* Draw the rod and the piston */
-  SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
-  SDL_RenderDrawLine(renderer, rodFoot.x, rodFoot.y, pistonPos.x, pistonPos.y);
-  // SDL_RenderDrawLine(
-  //     renderer, pistonPos.x - rescaleFactor * piston->geometry.bore / 2.f,
-  //     pistonPos.y, pistonPos.x + rescaleFactor * piston->geometry.bore / 2.f,
-  //     pistonPos.y);
+
+  // /* Draw the rod and the piston */
+  // SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
+
+  // // Rod
+  // SDL_RenderDrawLine(renderer, rodFoot.x, rodFoot.y, pistonPos.x,
+  // pistonPos.y);
+
+  // Piston
+  SDL_RenderDrawLine(renderer,
+                     pistonPos.x - rescaleFactor * piston->geometry.bore / 2.f,
+                     pistonPos.y - pistonOverHead,
+                     pistonPos.x + rescaleFactor * piston->geometry.bore / 2.f,
+                     pistonPos.y - pistonOverHead);
 
   // Convert surface to texture
   SDL_Texture *pistonTexture =
@@ -100,26 +111,23 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
             SDL_GetError());
   }
 
-  // Copy the texture to the rendering target (the window)
+  // Piston Texture
   SDL_Rect destRect;
-  destRect.x =
-      pistonPos.x - rescaleFactor * piston->geometry.bore / 2.f; // x position
-  destRect.y = pistonPos.y;                                      // y position
-  destRect.w =
-      rescaleFactor * piston->geometry.bore; // width of the texture on screen
-  destRect.h = rescaleFactor * piston->geometry.bore *
-               0.7f; // height of the texture on screen
+  destRect.x = pistonPos.x - rescaleFactor * piston->geometry.bore / 2.f;
+  destRect.y = pistonPos.y - pistonOverHead;
+  destRect.w = rescaleFactor * piston->geometry.bore;
+  destRect.h = rescaleFactor * piston->geometry.bore * 0.7f;
   SDL_RenderCopy(renderer, pistonTexture, nullptr, &destRect);
 
-  // Copy the texture to the rendering target (the window)
-  destRect.x = rodFoot.x - 25; // x
-  destRect.y = rodFoot.y - 60; // y
-  destRect.w = 50;             // width of the texture on
-  destRect.h = 80;             // height of the texture on screen
-  // SDL_RenderCopy(renderer, rodTexture, nullptr, &destRect);
-  SDL_Point center = {(int)destRect.x, (int)destRect.y};
+  // Rod Texture
+  const float rodScaleFactor = 1.6f;
+  destRect.x = rodFoot.x - 25 * rodScaleFactor;
+  destRect.y = rodFoot.y - 60 * rodScaleFactor;
+  destRect.w = 50 * rodScaleFactor;
+  destRect.h = 80 * rodScaleFactor;
+  SDL_Point center = {(int)(25 * rodScaleFactor), (int)(60 * rodScaleFactor)};
   SDL_RenderCopyEx(renderer, rodTexture, nullptr, &destRect,
-                   RADToDEG(-piston->getThetaAngle()), nullptr, SDL_FLIP_NONE);
+                   RADToDEG(-piston->getThetaAngle()), &center, SDL_FLIP_NONE);
 
   /* Draw Intake Valve */
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);

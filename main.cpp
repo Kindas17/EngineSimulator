@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
     const int timeStart = SDL_GetTicks();
 
     PistonGraphics *pistonGraphics =
-        new PistonGraphics(vector2_T{.x = 350.f, .y = 550.f}, piston, 2000);
+        new PistonGraphics(vector2_T{.x = 350.f, .y = 600.f}, piston, 2000);
 
     if (start) {
       gameLoopCnt++;

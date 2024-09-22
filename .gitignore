@@ -3,6 +3,7 @@
 /.vs
 CMakeUserPresets.json
 /.vscode
+/.mypy_cache
 
 # Required packages
 /imgui
