@@ -28,7 +28,7 @@ public:
   vector2_T rodFoot{};
 
   float throttle{0.f};
-  float minThrottle{0.014f};
+  float minThrottle{0.03f};
 
   /* Dynamics */
   bool ignitionOn;
@@ -37,10 +37,14 @@ public:
   float externalTorque;
   bool killDynamics{false};
 
-  float combustionAdvance{DEGToRAD(10.f)};
+  float combustionAdvance{10.f};
   float combustionSpeed{50000.f};
   float combustionEnergy{300.f};
   float kthermal{1.0f};
+  float intakeTiming{45.f};
+  float exhaustTiming{300.f};
+  float intakeShape{60.f};
+  float exhaustShape{60.f};
 
   /* Generic Methods */
   float getPistonPosition();
@@ -69,8 +73,8 @@ public:
   float intakeFlow{};
   float exhaustFlow{};
   float leakageFlow{};
-  float intakeCoef{0.03f};
-  float exhaustCoef{0.02f};
+  float intakeCoef{0.003f};
+  float exhaustCoef{0.002f};
 
   /* Settings */
   bool dynamicsIsActive;

@@ -58,7 +58,7 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
     combustion.h = -combustion.y + pistonPos.y;
     SDL_SetRenderDrawColor(renderer, 64, 32, 0, 0);
     if (piston->getHeadAngle() >=
-        std::numbers::pi - piston->combustionAdvance) {
+        std::numbers::pi - DEGToRAD(piston->combustionAdvance)) {
       SDL_RenderFillRect(renderer, &combustion);
     }
   }
@@ -128,6 +128,9 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
   SDL_Point center = {(int)(25 * rodScaleFactor), (int)(60 * rodScaleFactor)};
   SDL_RenderCopyEx(renderer, rodTexture, nullptr, &destRect,
                    RADToDEG(-piston->getThetaAngle()), &center, SDL_FLIP_NONE);
+
+  SDL_DestroyTexture(pistonTexture);
+  SDL_DestroyTexture(rodTexture);
 
   /* Draw Intake Valve */
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);

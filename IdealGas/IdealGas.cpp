@@ -1,8 +1,16 @@
 #include "IdealGas.hpp"
 #include "Geometry.hpp"
 #include <cmath>
+#include <iostream>
 
 using namespace std::numbers;
+
+constexpr float IDEAL_GAS_CONSTANT = 8.314f;
+constexpr float AIR_GAMMA = 1.4f;
+// Approx molar mass of air in kg/mol
+constexpr float M_air = 0.029f;
+// Critical Pdown / Pup
+constexpr float chokedFlowCondition = 1.f / 1.893f;
 
 IdealGas::IdealGas(float p, float v, float t) {
 
@@ -51,26 +59,29 @@ void IdealGas::updateState(float kthermal, float kFlow_int, float kFlow_exh,
   QPrime = 0.f;
 
   // rho = P * M_air / (R * T)
+  const float gamma = 1.4f;
+  const float criticalPressureDiff = 0.528f;
   const float R = 8.314;     // Ideal gas constant
   const float M_air = 0.029; // Approx molar mass of air in kg/mol
   const float rho_intake = Pout_int * M_air / (R * Tout_int);
   const float rho_chamber = P * M_air / (R * T);
   const float rho_exhaust = Pout_exh * M_air / (R * Tout_exh);
 
+  float squaredFlowFunction;
+  float pDiff;
+
   // Intake flow
-  // intakeFlow = kFlow_int * (Pout_int - P);
   if (Pout_int > P) {
-    intakeFlow = kFlow_int * sqrt(2 * (Pout_int - P) / rho_intake);
+    intakeFlow = kFlow_int * gasFlowFunction(Pout_int, P, Tout_int, T);
   } else {
-    intakeFlow = -kFlow_int * sqrt(2 * (P - Pout_int) / rho_chamber);
+    intakeFlow = -kFlow_int * gasFlowFunction(P, Pout_int, T, Tout_int);
   }
 
   // Exhaust flow
-  // exhaustFlow = kFlow_exh * (Pout_exh - P);
-  if (Pout_exh > P) {
-    exhaustFlow = kFlow_exh * sqrt(2 * (Pout_exh - P) / rho_chamber);
+  if (P > Pout_exh) {
+    exhaustFlow = -kFlow_exh * gasFlowFunction(P, Pout_exh, T, Tout_exh);
   } else {
-    exhaustFlow = -kFlow_exh * sqrt(2 * (P - Pout_exh) / rho_exhaust);
+    exhaustFlow = kFlow_exh * gasFlowFunction(Pout_exh, P, Tout_exh, T);
   }
 
   nRPrime = intakeFlow + exhaustFlow;
@@ -85,4 +96,15 @@ void IdealGas::updateState(float kthermal, float kFlow_int, float kFlow_exh,
 
   // Heat exchange: external world
   QPrime += kthermal * (300.f - T);
+}
+
+float gasFlowFunction(float Pup, float Pdown, float Tup, float Tdown) {
+  const float pDiff = Pdown / Pup;
+  const float rhoUp = Pup / (IDEAL_GAS_CONSTANT * Tup);
+  const float a = AIR_GAMMA / (AIR_GAMMA - 1);
+  const float b = 2 * a * Pup * rhoUp;
+  const float c =
+      pow(pDiff, 2.f / AIR_GAMMA) - pow(pDiff, (AIR_GAMMA + 1) / AIR_GAMMA);
+
+  return sqrt(b * c);
 }

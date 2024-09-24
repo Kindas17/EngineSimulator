@@ -10,6 +10,8 @@ constexpr float ZERO_CELSIUS_IN_KELVIN = 273.15f;
 constexpr float PAToATM(float X) { return ((X) / DEFAULT_AMBIENT_PRESSURE); }
 constexpr float KELVToCELS(float X) { return ((X)-ZERO_CELSIUS_IN_KELVIN); }
 
+float gasFlowFunction(float Pup, float Pdown, float Tup, float Tdown);
+
 std::valarray<float> F_IdealGas(float t, std::valarray<float> &st, float ang,
                                 float omega, CylinderGeometry g, float nRPrime,
                                 float QPrime);
@@ -38,8 +40,8 @@ public:
   float nRPrime;
   float VPrime;
 
-  float intakeFlow;
-  float exhaustFlow;
+  float intakeFlow{0.f};
+  float exhaustFlow{0.f};
 };
 
 #endif

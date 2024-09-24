@@ -8,10 +8,14 @@ def DEGToRAD(deg):
 
 
 def engineSetup(lib):
-    lib.setCombustionAdvance(c_float(DEGToRAD(10)))
-    lib.setIntakeExhaustCoefs(c_float(0.03), c_float(0.03))
+    lib.setCombustionAdvance(c_float(DEGToRAD(8)))
+    lib.setIntakeExhaustCoefs(c_float(0.003), c_float(0.002))
     lib.setCombustionSpeed(c_float(50000))
     lib.setThrottle(c_float(1))
+    lib.setIntakeTiming(c_float(45))
+    lib.setExhaustTiming(c_float(300))
+    lib.setIntakeShape(c_float(100))
+    lib.setExhaustShape(c_float(60))
 
 
 STEPS = 40

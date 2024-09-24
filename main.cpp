@@ -12,8 +12,8 @@ constexpr float getTimeStep_s(int mult, float frametime) {
   return frametime / (1000.f * mult);
 }
 
-constexpr int SIMULATION_MULTIPLIER = 800;
-constexpr float FRAMETIME = 25.f; /* ms */
+constexpr int SIMULATION_MULTIPLIER = 400;
+constexpr float FRAMETIME = 16.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
 
 int main(int argc, char *argv[]) {
@@ -102,13 +102,6 @@ int main(int argc, char *argv[]) {
     ImGui::NewFrame();
 
     ImGui::Begin("Test");
-    ImGui::Text("Time:       %.1f s", 0.001f * gameLoopCnt * FRAMETIME);
-    ImGui::Text("Framerate:  %.0f Hz", 1000.f / FRAMETIME);
-    ImGui::Text("Simulation: %.0f Hz",
-                SIMULATION_MULTIPLIER * 1000.f / FRAMETIME);
-    ImGui::Text("Engine Speed:  %.0f rpm", RADSToRPM(piston->getEngineSpeed()));
-    ImGui::Checkbox("Start", &start);
-    ImGui::Checkbox("Ignition", &piston->ignitionOn);
     ImGui::SliderFloat("External Torque [Nm]", &piston->externalTorque, 0.f,
                        20.f);
     ImGui::SliderFloat("Intake Coef", &piston->intakeCoef, 0.00012f, 0.0012f,
@@ -119,6 +112,11 @@ int main(int argc, char *argv[]) {
     ImGui::InputFloat("Combustion speed", &piston->combustionSpeed);
     ImGui::InputFloat("Combustion energy", &piston->combustionEnergy);
     ImGui::InputFloat("Thermal conductivity", &piston->kthermal);
+    ImGui::InputFloat("Advance", &piston->combustionAdvance);
+    ImGui::InputFloat("Intake Timing", &piston->intakeTiming);
+    ImGui::InputFloat("Exhaust Timing", &piston->exhaustTiming);
+    ImGui::InputFloat("Intake Shape", &piston->intakeShape);
+    ImGui::InputFloat("Exhaust Shape", &piston->exhaustShape);
     ImGui::End();
 
     ImGui::Begin("Test4");
@@ -150,6 +148,16 @@ int main(int argc, char *argv[]) {
     ImPlot::BeginPlot("ASD");
     ImPlot::PlotLine("Temperature", tempLog->getData(), tempLog->getSize());
     ImPlot::EndPlot();
+    ImGui::End();
+
+    ImGui::Begin("Test8");
+    ImGui::Text("Time:       %.1f s", 0.001f * gameLoopCnt * FRAMETIME);
+    ImGui::Text("Framerate:  %.0f Hz", 1000.f / FRAMETIME);
+    ImGui::Text("Simulation: %.0f Hz",
+                SIMULATION_MULTIPLIER * 1000.f / FRAMETIME);
+    ImGui::Text("Engine Speed:  %.0f rpm", RADSToRPM(piston->getEngineSpeed()));
+    ImGui::Checkbox("Start", &start);
+    ImGui::Checkbox("Ignition", &piston->ignitionOn);
     ImGui::End();
 
     /* Rendering */

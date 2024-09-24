@@ -100,7 +100,7 @@ void Piston::update(float deltaT) {
   gas->state = RungeKutta4(deltaT, 0.f, gas->state, F3);
 
   // Spark plug event
-  if (ignitionOn && getHeadAngle() > std::numbers::pi - combustionAdvance) {
+  if (ignitionOn && getHeadAngle() > std::numbers::pi - DEGToRAD(combustionAdvance)) {
     combustionInProgress = true;
   }
 
@@ -115,15 +115,17 @@ void Piston::ValveMgm() {
   using namespace std::numbers;
 
   /* Intake Profile */
-  const float profileSpeed1 = pi / 6.f;
+  const float profileSpeed1 = DEGToRAD(intakeShape);
   const float x_int =
-      (angleWrapper(state[0] - pi) - (pi / 4.f + pi)) / profileSpeed1;
+      (angleWrapper(state[0] - pi) - (DEGToRAD(intakeTiming) + pi)) /
+      profileSpeed1;
   intakeValve = expf(-(x_int * x_int));
 
   /* Exhaust Profile */
-  const float profileSpeed2 = DEGToRAD(20.f);
+  const float profileSpeed2 = DEGToRAD(exhaustShape);
   const float x_exh =
-      (angleWrapper(state[0] + pi) - (DEGToRAD(315) - pi)) / profileSpeed2;
+      (angleWrapper(state[0] + pi) - (DEGToRAD(exhaustTiming) - pi)) /
+      profileSpeed2;
   exhaustValve = expf(-(x_exh * x_exh));
 }
 

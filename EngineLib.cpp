@@ -27,6 +27,11 @@ extern "C" void setCombustionSpeed(float speed) {
 
 extern "C" void setThrottle(float throttle) { piston->throttle = throttle; }
 
+extern "C" void setIntakeTiming(float timing) { piston->intakeTiming = timing; }
+extern "C" void setExhaustTiming(float timing) { piston->exhaustTiming = timing; }
+extern "C" void setIntakeShape(float shape) { piston->intakeShape = shape; }
+extern "C" void setExhaustShape(float shape) { piston->exhaustShape = shape; }
+
 extern "C" float GetTorqueAtSpeed(float omega, int iterations) {
 
   // Setting up the engine
