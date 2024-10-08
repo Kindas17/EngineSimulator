@@ -25,7 +25,7 @@ static std::valarray<float> F_piston(float t, std::valarray<float> &st,
   const float omega = st[1];
 
   const float thetap = omega;
-  const float omegap = 0.f; // Ti + Te;
+  const float omegap = Ti + Te;
 
   return std::valarray<float>{thetap, omegap};
 }
@@ -45,8 +45,10 @@ Piston::Piston(CylinderGeometry geometryInfo)
 
   gas = new Gas(DEFAULT_AMBIENT_PRESSURE, getChamberVolume(),
                 DEFAULT_AMBIENT_TEMPERATURE, 1.f);
-  intakeGas =
-      new Gas(200000.f, getChamberVolume(), DEFAULT_AMBIENT_TEMPERATURE, 1.f);
+  intakeGas = new Gas(3 * DEFAULT_AMBIENT_PRESSURE, 20.f * getChamberVolume(),
+                      DEFAULT_AMBIENT_TEMPERATURE, 1.f);
+  exhaustGas = new Gas(3 * DEFAULT_AMBIENT_PRESSURE, 20.f * getChamberVolume(),
+                       DEFAULT_AMBIENT_TEMPERATURE, 1.f);
 
   ignitionOn = true;
 }
@@ -67,8 +69,10 @@ Piston::Piston(CylinderGeometry geometryInfo, float omega0)
 
   gas = new Gas(DEFAULT_AMBIENT_PRESSURE, getChamberVolume(),
                 DEFAULT_AMBIENT_TEMPERATURE, 1.f);
-  intakeGas =
-      new Gas(200000.f, getChamberVolume(), DEFAULT_AMBIENT_TEMPERATURE, 1.f);
+  intakeGas = new Gas(DEFAULT_AMBIENT_PRESSURE, 20.f * getChamberVolume(),
+                      DEFAULT_AMBIENT_TEMPERATURE, 1.f);
+  exhaustGas = new Gas(DEFAULT_AMBIENT_PRESSURE, 20.f * getChamberVolume(),
+                       DEFAULT_AMBIENT_TEMPERATURE, 1.f);
 
   ignitionOn = true;
 }
@@ -94,28 +98,20 @@ void Piston::update(float deltaT) {
   ValveMgm();
 
   // Update gas state
-  gas->updateState(kthermal, 
-                   getThrottle(throttle) * intakeValve * intakeCoef,
-                   exhaustCoef * exhaustValve, 
-                   intakeGas->getP(),
-                   DEFAULT_AMBIENT_PRESSURE, 
-                   intakeGas->getT(),
-                   DEFAULT_AMBIENT_TEMPERATURE, 
-                   1.f, 
-                   0.f,
+  gas->updateState(kthermal, getThrottle(throttle) * intakeValve * intakeCoef,
+                   exhaustCoef * exhaustValve, intakeGas->getP(),
+                   exhaustGas->getP(), intakeGas->getT(), exhaustGas->getT(),
+                   intakeGas->getOx(), exhaustGas->getOx(),
                    combustionInProgress ? combustionSpeed : 0.f,
                    combustionEnergy);
-  intakeGas->updateState(kthermal, 
-                         0.f, 
-                         getThrottle(throttle) * intakeValve * intakeCoef, 
-                         DEFAULT_AMBIENT_PRESSURE,
-                         gas->getP(), 
-                         DEFAULT_AMBIENT_TEMPERATURE, 
-                         gas->getT(),
-                         1.f, 
-                         gas->getOx(), 
-                         0.f, 
-                         0.f);
+  intakeGas->updateState(
+      kthermal, 0.001f, getThrottle(throttle) * intakeValve * intakeCoef,
+      DEFAULT_AMBIENT_PRESSURE, gas->getP(), DEFAULT_AMBIENT_TEMPERATURE,
+      gas->getT(), 1.f, gas->getOx(), 0.f, 0.f);
+  exhaustGas->updateState(kthermal, 0.001f, exhaustCoef * exhaustValve,
+                          DEFAULT_AMBIENT_PRESSURE, gas->getP(),
+                          DEFAULT_AMBIENT_TEMPERATURE, gas->getT(), 1.f,
+                          gas->getOx(), 0.f, 0.f);
 
   std::function<std::valarray<float>(float, std::valarray<float> &)> F3 =
       std::bind(F_Gas, _1, _2, getCurrentAngle(), getEngineSpeed(), geometry,
@@ -123,9 +119,13 @@ void Piston::update(float deltaT) {
   std::function<std::valarray<float>(float, std::valarray<float> &)> F4 =
       std::bind(F_Gas, _1, _2, 0.f, 0.f, geometry, intakeGas->nRPrime,
                 intakeGas->QPrime, intakeGas->oxPrime);
+  std::function<std::valarray<float>(float, std::valarray<float> &)> F5 =
+      std::bind(F_Gas, _1, _2, 0.f, 0.f, geometry, exhaustGas->nRPrime,
+                exhaustGas->QPrime, exhaustGas->oxPrime);
 
   gas->state = RungeKutta4(deltaT, 0.f, gas->state, F3);
   intakeGas->state = RungeKutta4(deltaT, 0.f, intakeGas->state, F4);
+  exhaustGas->state = RungeKutta4(deltaT, 0.f, exhaustGas->state, F5);
 
   // Spark plug event
   if (ignitionOn &&

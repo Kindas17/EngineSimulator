@@ -66,6 +66,7 @@ public:
   // IdealGas *gas;
   Gas *gas;
   Gas *intakeGas;
+  Gas *exhaustGas;
   bool combustionInProgress;
 
   /* Valves */

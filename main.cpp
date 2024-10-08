@@ -43,6 +43,11 @@ int main(int argc, char *argv[]) {
   CycleLogger *tempLog = new CycleLogger();
   CycleLogger *oxyLog = new CycleLogger();
 
+  CycleLogger *intakePresLog = new CycleLogger();
+  CycleLogger *exhaustPresLog = new CycleLogger();
+  CycleLogger *intakeTempLog = new CycleLogger();
+  CycleLogger *exhaustTempLog = new CycleLogger();
+
   // Initialize SDL_image (supports PNG, JPG, etc.)
   if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
     SDL_Log("SDL_image could not initialize! SDL_image Error: %s",
@@ -74,24 +79,32 @@ int main(int argc, char *argv[]) {
 
         piston->update(deltaT);
 
+        intakePresLog->addSample(PAToATM(piston->intakeGas->getP()));
+        exhaustPresLog->addSample(PAToATM(piston->exhaustGas->getP()));
+        intakeTempLog->addSample(KELVToCELS(piston->intakeGas->getT()));
+        exhaustTempLog->addSample(KELVToCELS(piston->exhaustGas->getT()));
         // presLog->addSample(PAToATM(piston->gas->getP()));
         // voluLog->addSample(M3ToCC(piston->gas->getV()));
         // nrLog->addSample(piston->gas->getnR());
         // tempLog->addSample(KELVToCELS(piston->gas->getT()));
-        // inflowLog->addSample(piston->gas->intakeFlow);
-        // outflowLog->addSample(piston->gas->exhaustFlow);
+        inflowLog->addSample(piston->gas->intakeFlow);
+        outflowLog->addSample(piston->gas->exhaustFlow);
         // oxyLog->addSample(piston->gas->state[4]);
 
-        // if (piston->cycleTrigger) {
-        //   presLog->trig();
-        //   voluLog->trig();
-        //   nrLog->trig();
-        //   tempLog->trig();
-        //   inflowLog->trig();
-        //   outflowLog->trig();
-        //   oxyLog->trig();
-        //   piston->cycleTrigger = false;
-        // }
+        if (piston->cycleTrigger) {
+          intakePresLog->trig();
+          exhaustPresLog->trig();
+          intakeTempLog->trig();
+          exhaustTempLog->trig();
+          // presLog->trig();
+          // voluLog->trig();
+          // nrLog->trig();
+          // tempLog->trig();
+          inflowLog->trig();
+          outflowLog->trig();
+          // oxyLog->trig();
+          piston->cycleTrigger = false;
+        }
 
         // End Simulation
       }
@@ -119,14 +132,24 @@ int main(int argc, char *argv[]) {
     ImGui::InputFloat("Exhaust Shape", &piston->exhaustShape);
     ImGui::End();
 
-    // ImGui::Begin("Test4");
-    // ImPlot::SetNextAxesToFit();
-    // ImPlot::BeginPlot("ASD");
-    // ImPlot::PlotLine("Intake Flow", inflowLog->getData(), inflowLog->getSize());
-    // ImPlot::PlotLine("Exhaust Flow", outflowLog->getData(),
-    //                  outflowLog->getSize());
-    // ImPlot::EndPlot();
-    // ImGui::End();
+    ImGui::Begin("Test4");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Intake Flow", inflowLog->getData(), inflowLog->getSize());
+    ImPlot::PlotLine("Exhaust Flow", outflowLog->getData(),
+                     outflowLog->getSize());
+    ImPlot::EndPlot();
+    ImGui::End();
+
+    ImGui::Begin("Temperature");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Intake Temp", intakeTempLog->getData(),
+                     intakeTempLog->getSize());
+    ImPlot::PlotLine("Exhaust Temp", exhaustTempLog->getData(),
+                     exhaustTempLog->getSize());
+    ImPlot::EndPlot();
+    ImGui::End();
 
     // ImGui::Begin("Test5");
     // ImPlot::SetNextAxesToFit();
@@ -150,6 +173,16 @@ int main(int argc, char *argv[]) {
     // ImPlot::EndPlot();
     // ImGui::End();
 
+    ImGui::Begin("Pressure");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Intake Pressure", intakePresLog->getData(),
+                     intakePresLog->getSize());
+    ImPlot::PlotLine("Exhaust Pressure", exhaustPresLog->getData(),
+                     exhaustPresLog->getSize());
+    ImPlot::EndPlot();
+    ImGui::End();
+
     ImGui::Begin("Test8");
     ImGui::Text("Time:       %.1f s", 0.001f * gameLoopCnt * FRAMETIME);
     ImGui::Text("Framerate:  %.0f Hz", 1000.f / FRAMETIME);
@@ -163,11 +196,19 @@ int main(int argc, char *argv[]) {
     ImGui::Begin("Intake Gas");
     ImGui::Text("Pressure: %.2f Atm", PAToATM(piston->intakeGas->getP()));
     ImGui::Text("Temperat: %.1f °C", KELVToCELS(piston->intakeGas->getT()));
+    ImGui::Text("Oxygenat: %.2f", piston->intakeGas->getOx());
     ImGui::End();
 
     ImGui::Begin("Chamber Gas");
     ImGui::Text("Pressure: %.2f Atm", PAToATM(piston->gas->getP()));
     ImGui::Text("Temperat: %.1f °C", KELVToCELS(piston->gas->getT()));
+    ImGui::Text("Oxygenat: %.2f", piston->gas->getOx());
+    ImGui::End();
+
+    ImGui::Begin("Exhaust Gas");
+    ImGui::Text("Pressure: %.2f Atm", PAToATM(piston->exhaustGas->getP()));
+    ImGui::Text("Temperat: %.1f °C", KELVToCELS(piston->exhaustGas->getT()));
+    ImGui::Text("Oxygenat: %.2f", piston->exhaustGas->getOx());
     ImGui::End();
 
     /* Rendering */
