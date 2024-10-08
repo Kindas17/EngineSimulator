@@ -37,14 +37,14 @@ public:
   float externalTorque;
   bool killDynamics{false};
 
-  float combustionAdvance{10.f};
-  float combustionSpeed{50000.f};
+  float combustionAdvance{0.f};
+  float combustionSpeed{25000.f};
   float combustionEnergy{300.f};
   float kthermal{1.0f};
   float intakeTiming{45.f};
   float exhaustTiming{300.f};
-  float intakeShape{60.f};
-  float exhaustShape{60.f};
+  float intakeShape{40.f};
+  float exhaustShape{40.f};
 
   /* Generic Methods */
   float getPistonPosition();
