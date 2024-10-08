@@ -65,6 +65,7 @@ public:
   /* Thermodynamics */
   // IdealGas *gas;
   Gas *gas;
+  Gas *intakeGas;
   bool combustionInProgress;
 
   /* Valves */

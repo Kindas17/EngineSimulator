@@ -95,7 +95,7 @@ void IdealGas::updateState(float kthermal, float kFlow_int, float kFlow_exh,
                                 : alpha * exhaustFlow * T;
 
   // Heat exchange: external world
-  QPrime += kthermal * (300.f - T);
+  QPrime += kthermal * (DEFAULT_AMBIENT_TEMPERATURE - T);
 }
 
 float gasFlowFunction(float Pup, float Pdown, float Tup, float Tdown) {

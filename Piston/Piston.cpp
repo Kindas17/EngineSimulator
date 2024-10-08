@@ -25,7 +25,7 @@ static std::valarray<float> F_piston(float t, std::valarray<float> &st,
   const float omega = st[1];
 
   const float thetap = omega;
-  const float omegap = Ti + Te;
+  const float omegap = 0.f; // Ti + Te;
 
   return std::valarray<float>{thetap, omegap};
 }
@@ -43,7 +43,10 @@ Piston::Piston(CylinderGeometry geometryInfo)
   rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
              .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
 
-  gas = new Gas(101325.f, getChamberVolume(), 300.f, 1.f);
+  gas = new Gas(DEFAULT_AMBIENT_PRESSURE, getChamberVolume(),
+                DEFAULT_AMBIENT_TEMPERATURE, 1.f);
+  intakeGas =
+      new Gas(200000.f, getChamberVolume(), DEFAULT_AMBIENT_TEMPERATURE, 1.f);
 
   ignitionOn = true;
 }
@@ -62,7 +65,10 @@ Piston::Piston(CylinderGeometry geometryInfo, float omega0)
   rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
              .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
 
-  gas = new Gas(101325.f, getChamberVolume(), 300.f, 1.f);
+  gas = new Gas(DEFAULT_AMBIENT_PRESSURE, getChamberVolume(),
+                DEFAULT_AMBIENT_TEMPERATURE, 1.f);
+  intakeGas =
+      new Gas(200000.f, getChamberVolume(), DEFAULT_AMBIENT_TEMPERATURE, 1.f);
 
   ignitionOn = true;
 }
@@ -88,19 +94,42 @@ void Piston::update(float deltaT) {
   ValveMgm();
 
   // Update gas state
-  gas->updateState(kthermal, getThrottle(throttle) * intakeValve * intakeCoef,
-                   exhaustCoef * exhaustValve, 101325.f, 101325.f, 300.f, 300.f,
-                   1.f, 0.f, combustionInProgress ? combustionSpeed : 0.f,
+  gas->updateState(kthermal, 
+                   getThrottle(throttle) * intakeValve * intakeCoef,
+                   exhaustCoef * exhaustValve, 
+                   intakeGas->getP(),
+                   DEFAULT_AMBIENT_PRESSURE, 
+                   intakeGas->getT(),
+                   DEFAULT_AMBIENT_TEMPERATURE, 
+                   1.f, 
+                   0.f,
+                   combustionInProgress ? combustionSpeed : 0.f,
                    combustionEnergy);
+  intakeGas->updateState(kthermal, 
+                         0.f, 
+                         getThrottle(throttle) * intakeValve * intakeCoef, 
+                         DEFAULT_AMBIENT_PRESSURE,
+                         gas->getP(), 
+                         DEFAULT_AMBIENT_TEMPERATURE, 
+                         gas->getT(),
+                         1.f, 
+                         gas->getOx(), 
+                         0.f, 
+                         0.f);
 
   std::function<std::valarray<float>(float, std::valarray<float> &)> F3 =
       std::bind(F_Gas, _1, _2, getCurrentAngle(), getEngineSpeed(), geometry,
                 gas->nRPrime, gas->QPrime, gas->oxPrime);
+  std::function<std::valarray<float>(float, std::valarray<float> &)> F4 =
+      std::bind(F_Gas, _1, _2, 0.f, 0.f, geometry, intakeGas->nRPrime,
+                intakeGas->QPrime, intakeGas->oxPrime);
 
   gas->state = RungeKutta4(deltaT, 0.f, gas->state, F3);
+  intakeGas->state = RungeKutta4(deltaT, 0.f, intakeGas->state, F4);
 
   // Spark plug event
-  if (ignitionOn && getHeadAngle() > std::numbers::pi - DEGToRAD(combustionAdvance)) {
+  if (ignitionOn &&
+      getHeadAngle() > std::numbers::pi - DEGToRAD(combustionAdvance)) {
     combustionInProgress = true;
   }
 

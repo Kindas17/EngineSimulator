@@ -17,6 +17,8 @@ public:
                    float Pout_int, float Pout_exh, float Tout_int,
                    float Tout_exh, float ox_int, float ox_exh, float kcs,
                    float kce);
+
+  float getOx() { return state[4]; }
 };
 
 #endif
