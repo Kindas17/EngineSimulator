@@ -65,8 +65,8 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
 
   /* Draw the crankshaft */
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
-  SDL_RenderDrawLine(renderer, crankCenter.x, crankCenter.y, rodFoot.x,
-                     rodFoot.y);
+  SDL_RenderDrawLine(
+      renderer, crankCenter.x, crankCenter.y, rodFoot.x, rodFoot.y);
   SDL_SetRenderDrawColor(renderer, 64, 64, 64, 0);
 
   /* Draw the cylinder */
@@ -101,14 +101,14 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
   SDL_Texture *pistonTexture =
       SDL_CreateTextureFromSurface(renderer, pistonSurface);
   if (!pistonTexture) {
-    SDL_Log("Unable to create texture from surface! SDL_Error: %s",
-            SDL_GetError());
+    SDL_Log(
+        "Unable to create texture from surface! SDL_Error: %s", SDL_GetError());
   }
   // Convert surface to texture
   SDL_Texture *rodTexture = SDL_CreateTextureFromSurface(renderer, rodSurface);
   if (!rodTexture) {
-    SDL_Log("Unable to create texture from surface! SDL_Error: %s",
-            SDL_GetError());
+    SDL_Log(
+        "Unable to create texture from surface! SDL_Error: %s", SDL_GetError());
   }
 
   // Piston Texture
@@ -126,8 +126,13 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
   destRect.w = 50 * rodScaleFactor;
   destRect.h = 80 * rodScaleFactor;
   SDL_Point center = {(int)(25 * rodScaleFactor), (int)(60 * rodScaleFactor)};
-  SDL_RenderCopyEx(renderer, rodTexture, nullptr, &destRect,
-                   RADToDEG(-piston->getThetaAngle()), &center, SDL_FLIP_NONE);
+  SDL_RenderCopyEx(renderer,
+                   rodTexture,
+                   nullptr,
+                   &destRect,
+                   RADToDEG(-piston->getThetaAngle()),
+                   &center,
+                   SDL_FLIP_NONE);
 
   SDL_DestroyTexture(pistonTexture);
   SDL_DestroyTexture(rodTexture);
@@ -149,7 +154,8 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
 
   const int exhaustValveH = piston->exhaustValve * 10.f;
   SDL_RenderDrawLine(
-      renderer, addStroke.x + 3.f * rescaleFactor * piston->geometry.bore / 4.f,
+      renderer,
+      addStroke.x + 3.f * rescaleFactor * piston->geometry.bore / 4.f,
       addStroke.y + exhaustValveH,
       addStroke.x + 3.f * rescaleFactor * piston->geometry.bore / 4.f,
       addStroke.y - 50.f + exhaustValveH);

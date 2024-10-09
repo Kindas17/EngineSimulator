@@ -7,7 +7,7 @@
 using namespace std::chrono;
 
 class FrameRVis {
-private:
+ private:
   high_resolution_clock::time_point start;
   high_resolution_clock::time_point end;
   int lastDuration;
@@ -20,8 +20,10 @@ private:
     }
   }
 
-public:
-  void startClock() { start = high_resolution_clock::now(); }
+ public:
+  void startClock() {
+    start = high_resolution_clock::now();
+  }
 
   void endClock() {
     end = high_resolution_clock::now();
@@ -33,9 +35,13 @@ public:
     return lastDuration / 1000.f;
   }
 
-  size_t getSize() { return v.size(); }
+  size_t getSize() {
+    return v.size();
+  }
 
-  float *getData() { return v.data(); }
+  float *getData() {
+    return v.data();
+  }
 
   float getFramerate() {
     if (!v.empty()) {

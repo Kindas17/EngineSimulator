@@ -1,18 +1,21 @@
 #include "Solver.hpp"
+
 #include <functional>
 #include <valarray>
 
 std::valarray<float> ForwardEuler(
-    float deltaT, float t, std::valarray<float> &state,
+    float deltaT,
+    float t,
+    std::valarray<float> &state,
     std::function<std::valarray<float>(float, std::valarray<float> &)> fun) {
-
   return state + deltaT * fun(t, state);
 }
 
 std::valarray<float> RungeKutta4(
-    float deltaT, float t, std::valarray<float> &state,
+    float deltaT,
+    float t,
+    std::valarray<float> &state,
     std::function<std::valarray<float>(float, std::valarray<float> &)> fun) {
-
   std::valarray<float> tmp;
   std::valarray<float> k1 = fun(t, state);
 

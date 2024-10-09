@@ -1,9 +1,10 @@
 #ifndef PISTON_HPP
 #define PISTON_HPP
+#include <numbers>
+
 #include "Gas.hpp"
 #include "Geometry.hpp"
 #include "Linalg.hpp"
-#include <numbers>
 
 constexpr float DEGToRAD(float X) {
   return (2.0 * std::numbers::pi * (X) / 360.f);
@@ -11,15 +12,21 @@ constexpr float DEGToRAD(float X) {
 constexpr float RADToDEG(float X) {
   return (360.0 * (X) / (2 * std::numbers::pi));
 }
-constexpr float RADSToHZ(float X) { return ((X) / (2.f * std::numbers::pi)); }
-constexpr float RADSToRPM(float X) { return (60.f * RADSToHZ((X))); }
-constexpr float RPMToHz(float X) { return X / 60.f; }
+constexpr float RADSToHZ(float X) {
+  return ((X) / (2.f * std::numbers::pi));
+}
+constexpr float RADSToRPM(float X) {
+  return (60.f * RADSToHZ((X)));
+}
+constexpr float RPMToHz(float X) {
+  return X / 60.f;
+}
 constexpr float RPMToRADS(float X) {
   return 2.f * std::numbers::pi * RPMToHz(X);
 }
 
 class Piston {
-public:
+ public:
   Piston(CylinderGeometry geometryInfo);
   Piston(CylinderGeometry geometryInfo, float omega0);
 
@@ -84,8 +91,8 @@ public:
   /* Triggers */
   bool cycleTrigger{};
 
-private:
-  std::valarray<float> state = {0.f, 0.f}; // Head angle, omega head
+ private:
+  std::valarray<float> state = {0.f, 0.f};  // Head angle, omega head
 };
 
 #endif

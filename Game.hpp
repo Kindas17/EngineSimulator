@@ -1,16 +1,18 @@
 #ifndef GAME_HPP
 #define GAME_HPP
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <stdio.h>
+
+#include <string>
+
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
 #include "implot.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <stdio.h>
-#include <string>
 
 class Game {
-public:
+ public:
   Game(const char *title, int xpos, int ypos, int height, int width);
   void handleEvents();
   void RenderClear();
@@ -23,7 +25,7 @@ public:
   SDL_Window *window;
   SDL_Renderer *renderer;
 
-private:
+ private:
 };
 
 #endif

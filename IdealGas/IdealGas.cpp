@@ -1,7 +1,9 @@
 #include "IdealGas.hpp"
-#include "Geometry.hpp"
+
 #include <cmath>
 #include <iostream>
+
+#include "Geometry.hpp"
 
 using namespace std::numbers;
 
@@ -13,17 +15,19 @@ constexpr float M_air = 0.029f;
 constexpr float chokedFlowCondition = 1.f / 1.893f;
 
 IdealGas::IdealGas(float p, float v, float t) {
-
   state[0] = p;
   state[1] = v;
   state[3] = t;
   state[2] = state[0] * state[1] / state[3];
 }
 
-std::valarray<float> F_IdealGas(float t, std::valarray<float> &st, float ang,
-                                float omega, CylinderGeometry g, float nRPrime,
+std::valarray<float> F_IdealGas(float t,
+                                std::valarray<float> &st,
+                                float ang,
+                                float omega,
+                                CylinderGeometry g,
+                                float nRPrime,
                                 float QPrime) {
-
   const float a = IdealGas::alpha;
   const float P = st[0];
   const float V = st[1];
@@ -50,10 +54,13 @@ std::valarray<float> F_IdealGas(float t, std::valarray<float> &st, float ang,
   return std::valarray<float>{Pp, Vp, nRp, Tp};
 }
 
-void IdealGas::updateState(float kthermal, float kFlow_int, float kFlow_exh,
-                           float Pout_int, float Pout_exh, float Tout_int,
+void IdealGas::updateState(float kthermal,
+                           float kFlow_int,
+                           float kFlow_exh,
+                           float Pout_int,
+                           float Pout_exh,
+                           float Tout_int,
                            float Tout_exh) {
-
   const float P = state[0];
   const float T = state[3];
   QPrime = 0.f;
@@ -61,8 +68,8 @@ void IdealGas::updateState(float kthermal, float kFlow_int, float kFlow_exh,
   // rho = P * M_air / (R * T)
   const float gamma = 1.4f;
   const float criticalPressureDiff = 0.528f;
-  const float R = 8.314;     // Ideal gas constant
-  const float M_air = 0.029; // Approx molar mass of air in kg/mol
+  const float R = 8.314;      // Ideal gas constant
+  const float M_air = 0.029;  // Approx molar mass of air in kg/mol
   const float rho_intake = Pout_int * M_air / (R * Tout_int);
   const float rho_chamber = P * M_air / (R * T);
   const float rho_exhaust = Pout_exh * M_air / (R * Tout_exh);

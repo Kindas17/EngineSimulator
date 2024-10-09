@@ -3,24 +3,24 @@
 #include <vector>
 
 class Logger {
-public:
+ public:
   Logger(std::size_t max_size);
   void addSample(float sample);
   float *getData();
   std::size_t getSize();
 
-private:
+ private:
   std::size_t max_size;
   std::vector<float> v;
 };
 
 class CycleLogger {
-private:
+ private:
   int which;
   std::vector<float> a;
   std::vector<float> b;
 
-public:
+ public:
   void trig();
   void addSample(float sample);
   float *getData();

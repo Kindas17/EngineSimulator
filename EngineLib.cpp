@@ -1,7 +1,8 @@
-#include "Logger.hpp"
-#include "Piston.hpp"
 #include <iostream>
 #include <vector>
+
+#include "Logger.hpp"
+#include "Piston.hpp"
 
 // Setting up the engine
 CylinderGeometry *geom = new CylinderGeometry();
@@ -25,15 +26,24 @@ extern "C" void setCombustionSpeed(float speed) {
   piston->combustionSpeed = speed;
 }
 
-extern "C" void setThrottle(float throttle) { piston->throttle = throttle; }
+extern "C" void setThrottle(float throttle) {
+  piston->throttle = throttle;
+}
 
-extern "C" void setIntakeTiming(float timing) { piston->intakeTiming = timing; }
-extern "C" void setExhaustTiming(float timing) { piston->exhaustTiming = timing; }
-extern "C" void setIntakeShape(float shape) { piston->intakeShape = shape; }
-extern "C" void setExhaustShape(float shape) { piston->exhaustShape = shape; }
+extern "C" void setIntakeTiming(float timing) {
+  piston->intakeTiming = timing;
+}
+extern "C" void setExhaustTiming(float timing) {
+  piston->exhaustTiming = timing;
+}
+extern "C" void setIntakeShape(float shape) {
+  piston->intakeShape = shape;
+}
+extern "C" void setExhaustShape(float shape) {
+  piston->exhaustShape = shape;
+}
 
 extern "C" float GetTorqueAtSpeed(float omega, int iterations) {
-
   // Setting up the engine
   piston->setEngineSpeed(omega);
   piston->ignitionOn = true;
@@ -55,12 +65,10 @@ extern "C" float GetTorqueAtSpeed(float omega, int iterations) {
 
   while (reps < iterations + 1) {
     for (size_t j = 0; j < stepsPerCycle; ++j) {
-
       piston->update(deltaT);
       torqueLog->addSample(piston->getTorque());
 
       if (piston->cycleTrigger) {
-
         // Skip the first trigger as it might be strange
         if (reps != 0) {
           // Save the entire torque profile
