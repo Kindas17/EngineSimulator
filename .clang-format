@@ -1,1 +1,12 @@
 BasedOnStyle: LLVM
+
+# BasedOnStyle: Google              # Start with Google's style for consistency
+# IndentWidth: 2                    # 4 spaces for indentation (similar to Android Studio)
+# ColumnLimit: 80                   # Line length limit for readability
+# AllowAllParametersOfDeclarationOnNextLine: true
+# BinPackArguments: false           # Force each function argument onto a new line
+# AllowShortFunctionsOnASingleLine: false  # Avoid single-line functions
+# AllowShortIfStatementsOnASingleLine: false
+# BreakBeforeBraces: Attach         # Place braces on the same line for function/class/struct
+# PenaltyBreakBeforeFirstCallParameter: 0   # Always break before the first argument
+# BinPackParameters: false          # Avoid packing parameters in one line
