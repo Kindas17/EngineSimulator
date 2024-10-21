@@ -51,6 +51,9 @@ int main(int argc, char *argv[]) {
   CycleLogger intakeTempLog = CycleLogger();
   CycleLogger exhaustTempLog = CycleLogger();
 
+  CycleLogger intakeOxyLog = CycleLogger();
+  CycleLogger exhaustOxyLog = CycleLogger();
+
   // Initialize SDL_image (supports PNG, JPG, etc.)
   if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
     SDL_Log(
@@ -86,11 +89,13 @@ int main(int argc, char *argv[]) {
         exhaustTempLog.addSample(KELVToCELS(piston.exhaustGas->getT()));
         // presLog->addSample(PAToATM(piston.gas->getP()));
         // voluLog->addSample(M3ToCC(piston.gas->getV()));
-        // nrLog->addSample(piston.gas->getnR());
+        nrLog.addSample(piston.gas->getnR());
         // tempLog->addSample(KELVToCELS(piston.gas->getT()));
         inflowLog.addSample(piston.gas->intakeFlow);
         outflowLog.addSample(piston.gas->exhaustFlow);
-        // oxyLog->addSample(piston.gas->state[4]);
+        oxyLog.addSample(piston.gas->getOx());
+        intakeOxyLog.addSample(piston.intakeGas->getOx());
+        exhaustOxyLog.addSample(piston.exhaustGas->getOx());
 
         if (piston.cycleTrigger) {
           intakePresLog.trig();
@@ -99,11 +104,14 @@ int main(int argc, char *argv[]) {
           exhaustTempLog.trig();
           // presLog->trig();
           // voluLog->trig();
-          // nrLog->trig();
+          nrLog.trig();
           // tempLog->trig();
           inflowLog.trig();
           outflowLog.trig();
-          // oxyLog->trig();
+          oxyLog.trig();
+          intakeOxyLog.trig();
+          exhaustOxyLog.trig();
+
           piston.cycleTrigger = false;
         }
 
@@ -174,6 +182,15 @@ int main(int argc, char *argv[]) {
     // ImPlot::EndPlot();
     // ImGui::End();
 
+    ImGui::Begin("Test7");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Chamber Oxy", oxyLog.getData(), oxyLog.getSize());
+    ImPlot::PlotLine("Intake Oxy", intakeOxyLog.getData(), intakeOxyLog.getSize());
+    ImPlot::PlotLine("Exhaust Oxy", exhaustOxyLog.getData(), exhaustOxyLog.getSize());
+    ImPlot::EndPlot();
+    ImGui::End();
+
     ImGui::Begin("Pressure");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
@@ -194,23 +211,23 @@ int main(int argc, char *argv[]) {
     ImGui::Checkbox("Ignition", &piston.ignitionOn);
     ImGui::End();
 
-    ImGui::Begin("Intake Gas");
-    ImGui::Text("Pressure: %.2f Atm", PAToATM(piston.intakeGas->getP()));
-    ImGui::Text("Temperat: %.1f °C", KELVToCELS(piston.intakeGas->getT()));
-    ImGui::Text("Oxygenat: %.2f", piston.intakeGas->getOx());
-    ImGui::End();
+    // ImGui::Begin("Intake Gas");
+    // ImGui::Text("Pressure: %.2f Atm", PAToATM(piston.intakeGas->getP()));
+    // ImGui::Text("Temperat: %.1f °C", KELVToCELS(piston.intakeGas->getT()));
+    // ImGui::Text("Oxygenat: %.2f", piston.intakeGas->getOx());
+    // ImGui::End();
 
-    ImGui::Begin("Chamber Gas");
-    ImGui::Text("Pressure: %.2f Atm", PAToATM(piston.gas->getP()));
-    ImGui::Text("Temperat: %.1f °C", KELVToCELS(piston.gas->getT()));
-    ImGui::Text("Oxygenat: %.2f", piston.gas->getOx());
-    ImGui::End();
+    // ImGui::Begin("Chamber Gas");
+    // ImGui::Text("Pressure: %.2f Atm", PAToATM(piston.gas->getP()));
+    // ImGui::Text("Temperat: %.1f °C", KELVToCELS(piston.gas->getT()));
+    // ImGui::Text("Oxygenat: %.2f", piston.gas->getOx());
+    // ImGui::End();
 
-    ImGui::Begin("Exhaust Gas");
-    ImGui::Text("Pressure: %.2f Atm", PAToATM(piston.exhaustGas->getP()));
-    ImGui::Text("Temperat: %.1f °C", KELVToCELS(piston.exhaustGas->getT()));
-    ImGui::Text("Oxygenat: %.2f", piston.exhaustGas->getOx());
-    ImGui::End();
+    // ImGui::Begin("Exhaust Gas");
+    // ImGui::Text("Pressure: %.2f Atm", PAToATM(piston.exhaustGas->getP()));
+    // ImGui::Text("Temperat: %.1f °C", KELVToCELS(piston.exhaustGas->getT()));
+    // ImGui::Text("Oxygenat: %.2f", piston.exhaustGas->getOx());
+    // ImGui::End();
 
     /* Rendering */
     ImGui::Render();

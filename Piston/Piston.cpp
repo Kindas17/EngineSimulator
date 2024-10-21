@@ -54,11 +54,11 @@ Piston::Piston(CylinderGeometry geometryInfo)
                 DEFAULT_AMBIENT_TEMPERATURE,
                 1.f);
   intakeGas = new Gas(3 * DEFAULT_AMBIENT_PRESSURE,
-                      20.f * getChamberVolume(),
+                      25.f * getChamberVolume(),
                       DEFAULT_AMBIENT_TEMPERATURE,
                       1.f);
   exhaustGas = new Gas(3 * DEFAULT_AMBIENT_PRESSURE,
-                       20.f * getChamberVolume(),
+                       70.f * getChamberVolume(),
                        DEFAULT_AMBIENT_TEMPERATURE,
                        1.f);
 
@@ -85,11 +85,11 @@ Piston::Piston(CylinderGeometry geometryInfo, float omega0)
                 DEFAULT_AMBIENT_TEMPERATURE,
                 1.f);
   intakeGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-                      20.f * getChamberVolume(),
+                      100.f * getChamberVolume(),
                       DEFAULT_AMBIENT_TEMPERATURE,
                       1.f);
   exhaustGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-                       20.f * getChamberVolume(),
+                       100.f * getChamberVolume(),
                        DEFAULT_AMBIENT_TEMPERATURE,
                        1.f);
 
