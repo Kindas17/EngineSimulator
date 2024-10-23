@@ -5,6 +5,9 @@
 
 #include "Geometry.hpp"
 
+constexpr float IDEAL_GAS_CONSTANT = 8.314f;
+// Approx molar mass of air in kg/mol
+constexpr float M_air = 0.029f;
 constexpr float DEFAULT_AMBIENT_PRESSURE = 101325.f;
 constexpr float DEFAULT_AMBIENT_TEMPERATURE = 300.f;
 constexpr float ZERO_CELSIUS_IN_KELVIN = 273.15f;
@@ -45,8 +48,8 @@ class IdealGas {
   static constexpr float alpha = 5.f / 2.f;
 
   // The last value is just to solve a stupid problem...
-  // Derived class Gas needs 5 elements here.
-  std::valarray<float> state = {0.f, 0.f, 0.f, 0.f, 0.f};
+  // Derived class Gas needs 6 elements here.
+  std::valarray<float> state = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
 
   void updateState(float kthermal,
                    float kFlow_int,

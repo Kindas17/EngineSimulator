@@ -46,7 +46,7 @@ class Piston {
 
   float combustionAdvance{0.f};
   float combustionSpeed{25000.f};
-  float combustionEnergy{300.f};
+  float combustionEnergy{1000.f};
   float kthermal{1.0f};
   float intakeTiming{45.f};
   float exhaustTiming{300.f};

@@ -45,6 +45,7 @@ int main(int argc, char *argv[]) {
   CycleLogger nrLog = CycleLogger();
   CycleLogger tempLog = CycleLogger();
   CycleLogger oxyLog = CycleLogger();
+  CycleLogger fuelLog = CycleLogger();
 
   CycleLogger intakePresLog = CycleLogger();
   CycleLogger exhaustPresLog = CycleLogger();
@@ -96,6 +97,7 @@ int main(int argc, char *argv[]) {
         oxyLog.addSample(piston.gas->getOx());
         intakeOxyLog.addSample(piston.intakeGas->getOx());
         exhaustOxyLog.addSample(piston.exhaustGas->getOx());
+        fuelLog.addSample(piston.gas->getFuel());
 
         if (piston.cycleTrigger) {
           intakePresLog.trig();
@@ -111,6 +113,7 @@ int main(int argc, char *argv[]) {
           oxyLog.trig();
           intakeOxyLog.trig();
           exhaustOxyLog.trig();
+          fuelLog.trig();
 
           piston.cycleTrigger = false;
         }
@@ -160,6 +163,13 @@ int main(int argc, char *argv[]) {
     ImPlot::EndPlot();
     ImGui::End();
 
+    ImGui::Begin("Fuel Amount");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Fuel Amount", fuelLog.getData(), fuelLog.getSize());
+    ImPlot::EndPlot();
+    ImGui::End();
+
     // ImGui::Begin("Test5");
     // ImPlot::SetNextAxesToFit();
     // ImPlot::BeginPlot("ASD");
@@ -186,8 +196,10 @@ int main(int argc, char *argv[]) {
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
     ImPlot::PlotLine("Chamber Oxy", oxyLog.getData(), oxyLog.getSize());
-    ImPlot::PlotLine("Intake Oxy", intakeOxyLog.getData(), intakeOxyLog.getSize());
-    ImPlot::PlotLine("Exhaust Oxy", exhaustOxyLog.getData(), exhaustOxyLog.getSize());
+    ImPlot::PlotLine(
+        "Intake Oxy", intakeOxyLog.getData(), intakeOxyLog.getSize());
+    ImPlot::PlotLine(
+        "Exhaust Oxy", exhaustOxyLog.getData(), exhaustOxyLog.getSize());
     ImPlot::EndPlot();
     ImGui::End();
 
@@ -207,6 +219,10 @@ int main(int argc, char *argv[]) {
     ImGui::Text(
         "Simulation: %.0f Hz", SIMULATION_MULTIPLIER * 1000.f / FRAMETIME);
     ImGui::Text("Engine Speed:  %.0f rpm", RADSToRPM(piston.getEngineSpeed()));
+    ImGui::Text("Fuel Amnt:    %.3f mg", 1000000 * piston.gas->fuelInjected);
+    ImGui::Text("Consumption:  %.3f g/h",
+                3600 * 1000 * piston.gas->fuelInjected *
+                    RADSToHZ(piston.getEngineSpeed()));
     ImGui::Checkbox("Start", &start);
     ImGui::Checkbox("Ignition", &piston.ignitionOn);
     ImGui::End();

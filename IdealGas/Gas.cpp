@@ -9,16 +9,21 @@ std::valarray<float> F_Gas(float t,
                            CylinderGeometry g,
                            float nRPrime,
                            float QPrime,
-                           float oxPrime) {
+                           float oxPrime,
+                           float fuelPrime) {
   auto stPrime = F_IdealGas(t, st, ang, omega, g, nRPrime, QPrime);
   stPrime[4] = oxPrime;
+  stPrime[5] = fuelPrime;
 
   return stPrime;
 }
 
 Gas::Gas(float p, float v, float t, float o) : IdealGas(p, v, t) {
   state[4] = o;
+  state[5] = 0.f;
   oxPrime = 0.f;
+  fuelPrime = 0.f;
+  fuelInjected = 0.f;
 }
 
 void Gas::updateState(float kthermal,
@@ -44,7 +49,10 @@ void Gas::updateState(float kthermal,
 
   // Combustion
   const float oxPrime_combustion = -kcs * state[2] * state[4];
-  QPrime += -kce * oxPrime_combustion;
+  // QPrime += -kce * oxPrime_combustion;
+
+  fuelPrime = -100.f * state[5];
+  QPrime += -fuelPrime * kce * 100000.f;
 
   oxPrime = oxPrime_int + oxPrime_exh + oxPrime_combustion;
 }

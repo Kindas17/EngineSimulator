@@ -10,11 +10,14 @@ std::valarray<float> F_Gas(float t,
                            CylinderGeometry g,
                            float nRPrime,
                            float QPrime,
-                           float oxPrime);
+                           float oxPrime,
+                           float fuelPrime);
 
 class Gas : public IdealGas {
  public:
   float oxPrime;
+  float fuelPrime;
+  float fuelInjected;
 
   Gas(float p, float v, float t, float o);
 
@@ -32,6 +35,16 @@ class Gas : public IdealGas {
 
   float getOx() {
     return state[4];
+  }
+
+  float getFuel() {
+    return state[5];
+  }
+
+  void setFuelAmnt(float afr) {
+    const float airMass = M_air * state[2] / IDEAL_GAS_CONSTANT;
+    state[5] = state[4] * airMass / afr;
+    fuelInjected = state[5];
   }
 };
 

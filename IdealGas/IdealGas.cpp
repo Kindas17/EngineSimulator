@@ -7,10 +7,7 @@
 
 using namespace std::numbers;
 
-constexpr float IDEAL_GAS_CONSTANT = 8.314f;
 constexpr float AIR_GAMMA = 1.4f;
-// Approx molar mass of air in kg/mol
-constexpr float M_air = 0.029f;
 // Critical Pdown / Pup
 constexpr float chokedFlowCondition = 1.f / 1.893f;
 
@@ -65,14 +62,9 @@ void IdealGas::updateState(float kthermal,
   const float T = state[3];
   QPrime = 0.f;
 
-  // rho = P * M_air / (R * T)
-  const float gamma = 1.4f;
-  const float criticalPressureDiff = 0.528f;
-  const float R = 8.314;      // Ideal gas constant
-  const float M_air = 0.029;  // Approx molar mass of air in kg/mol
-  const float rho_intake = Pout_int * M_air / (R * Tout_int);
-  const float rho_chamber = P * M_air / (R * T);
-  const float rho_exhaust = Pout_exh * M_air / (R * Tout_exh);
+  const float rho_intake = Pout_int * M_air / (IDEAL_GAS_CONSTANT * Tout_int);
+  const float rho_chamber = P * M_air / (IDEAL_GAS_CONSTANT * T);
+  const float rho_exhaust = Pout_exh * M_air / (IDEAL_GAS_CONSTANT * Tout_exh);
 
   float squaredFlowFunction;
   float pDiff;

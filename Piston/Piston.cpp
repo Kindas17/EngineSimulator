@@ -161,7 +161,8 @@ void Piston::update(float deltaT) {
                 geometry,
                 gas->nRPrime,
                 gas->QPrime,
-                gas->oxPrime);
+                gas->oxPrime,
+                gas->fuelPrime);
   std::function<std::valarray<float>(float, std::valarray<float> &)> F4 =
       std::bind(F_Gas,
                 _1,
@@ -171,7 +172,8 @@ void Piston::update(float deltaT) {
                 geometry,
                 intakeGas->nRPrime,
                 intakeGas->QPrime,
-                intakeGas->oxPrime);
+                intakeGas->oxPrime,
+                intakeGas->fuelPrime);
   std::function<std::valarray<float>(float, std::valarray<float> &)> F5 =
       std::bind(F_Gas,
                 _1,
@@ -181,7 +183,8 @@ void Piston::update(float deltaT) {
                 geometry,
                 exhaustGas->nRPrime,
                 exhaustGas->QPrime,
-                exhaustGas->oxPrime);
+                exhaustGas->oxPrime,
+                intakeGas->fuelPrime);
 
   gas->state = RungeKutta4(deltaT, 0.f, gas->state, F3);
   intakeGas->state = RungeKutta4(deltaT, 0.f, intakeGas->state, F4);
@@ -190,6 +193,10 @@ void Piston::update(float deltaT) {
   // Spark plug event
   if (ignitionOn &&
       getHeadAngle() > std::numbers::pi - DEGToRAD(combustionAdvance)) {
+    
+    if (!combustionInProgress) {
+      gas->setFuelAmnt(14.7f);
+    }
     combustionInProgress = true;
   }
 
