@@ -223,6 +223,9 @@ int main(int argc, char *argv[]) {
     ImGui::Text("Consumption:  %.3f g/h",
                 3600 * 1000 * piston.gas->fuelInjected *
                     RADSToHZ(piston.getEngineSpeed()));
+
+    ImGui::Text("Total cons:   %.3f g", 1000.f * piston.totalFuelConsumption);
+
     ImGui::Checkbox("Start", &start);
     ImGui::Checkbox("Ignition", &piston.ignitionOn);
     ImGui::End();

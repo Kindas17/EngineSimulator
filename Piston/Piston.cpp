@@ -196,6 +196,7 @@ void Piston::update(float deltaT) {
     
     if (!combustionInProgress) {
       gas->setFuelAmnt(14.7f);
+      totalFuelConsumption += gas->fuelInjected;
     }
     combustionInProgress = true;
   }

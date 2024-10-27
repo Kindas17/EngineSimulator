@@ -37,6 +37,8 @@ class Piston {
   float throttle{0.f};
   float minThrottle{0.03f};
 
+  float totalFuelConsumption{0.f};
+
   /* Dynamics */
   bool ignitionOn;
   void update(float deltaT);
