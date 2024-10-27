@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <iostream>
 #include <numeric>
+#include <thread>
 
 #include "FrameRVis.hpp"
 #include "Game.hpp"
@@ -14,11 +15,84 @@ constexpr float getTimeStep_s(int mult, float frametime) {
   return frametime / (1000.f * mult);
 }
 
-constexpr int SIMULATION_MULTIPLIER = 200;
 constexpr float FRAMETIME = 16.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
+constexpr float SIMULATION_FREQUENCY = 12000.f;  // [Hz]
 
 float cpuLoad = 0.f;
+float simLoad = 0.f;
+size_t cnt1 = 0;
+size_t cnt2 = 0;
+
+CylinderGeometry geom = CylinderGeometry();
+Piston piston = Piston(geom);
+CycleLogger inflowLog = CycleLogger();
+CycleLogger outflowLog = CycleLogger();
+CycleLogger presLog = CycleLogger();
+CycleLogger voluLog = CycleLogger();
+CycleLogger nrLog = CycleLogger();
+CycleLogger tempLog = CycleLogger();
+CycleLogger oxyLog = CycleLogger();
+CycleLogger fuelLog = CycleLogger();
+
+CycleLogger intakePresLog = CycleLogger();
+CycleLogger exhaustPresLog = CycleLogger();
+CycleLogger intakeTempLog = CycleLogger();
+CycleLogger exhaustTempLog = CycleLogger();
+
+CycleLogger intakeOxyLog = CycleLogger();
+CycleLogger exhaustOxyLog = CycleLogger();
+
+void EngineSimulation(bool *gameIsRunning) {
+  const auto timeDelta =
+      duration<float, std::micro>(1000000 / SIMULATION_FREQUENCY);
+
+  while (*gameIsRunning) {
+    cnt2++;
+    const auto timeStart = high_resolution_clock::now();
+
+    piston.update(0.00008f);
+
+    // intakePresLog.addSample(PAToATM(piston.intakeGas->getP()));
+    // exhaustPresLog.addSample(PAToATM(piston.exhaustGas->getP()));
+    // intakeTempLog.addSample(KELVToCELS(piston.intakeGas->getT()));
+    // exhaustTempLog.addSample(KELVToCELS(piston.exhaustGas->getT()));
+    // // presLog->addSample(PAToATM(piston.gas->getP()));
+    // // voluLog->addSample(M3ToCC(piston.gas->getV()));
+    // nrLog.addSample(piston.gas->getnR());
+    // // tempLog->addSample(KELVToCELS(piston.gas->getT()));
+    // inflowLog.addSample(piston.gas->intakeFlow);
+    // outflowLog.addSample(piston.gas->exhaustFlow);
+    // oxyLog.addSample(piston.gas->getOx());
+    // intakeOxyLog.addSample(piston.intakeGas->getOx());
+    // exhaustOxyLog.addSample(piston.exhaustGas->getOx());
+    // fuelLog.addSample(piston.gas->getFuel());
+    // if (piston.cycleTrigger) {
+    //   intakePresLog.trig();
+    //   exhaustPresLog.trig();
+    //   intakeTempLog.trig();
+    //   exhaustTempLog.trig();
+    //   // presLog->trig();
+    //   // voluLog->trig();
+    //   nrLog.trig();
+    //   // tempLog->trig();
+    //   inflowLog.trig();
+    //   outflowLog.trig();
+    //   oxyLog.trig();
+    //   intakeOxyLog.trig();
+    //   exhaustOxyLog.trig();
+    //   fuelLog.trig();
+
+    //   piston.cycleTrigger = false;
+    // }
+
+    // Wait for next simulation step
+    const auto timeEnd = high_resolution_clock::now();
+    simLoad = 0.999f * simLoad + 0.001f * (timeEnd - timeStart) / timeDelta;
+    const auto sleepTime = timeDelta - (timeEnd - timeStart);
+    std::this_thread::sleep_for(sleepTime);
+  }
+}
 
 int main(int argc, char *argv[]) {
   bool start = false;
@@ -39,25 +113,6 @@ int main(int argc, char *argv[]) {
   ImGui_ImplSDL2_InitForSDLRenderer(game.window, game.renderer);
   ImGui_ImplSDLRenderer2_Init(game.renderer);
 
-  CylinderGeometry geom = CylinderGeometry();
-  Piston piston = Piston(geom);
-  CycleLogger inflowLog = CycleLogger();
-  CycleLogger outflowLog = CycleLogger();
-  CycleLogger presLog = CycleLogger();
-  CycleLogger voluLog = CycleLogger();
-  CycleLogger nrLog = CycleLogger();
-  CycleLogger tempLog = CycleLogger();
-  CycleLogger oxyLog = CycleLogger();
-  CycleLogger fuelLog = CycleLogger();
-
-  CycleLogger intakePresLog = CycleLogger();
-  CycleLogger exhaustPresLog = CycleLogger();
-  CycleLogger intakeTempLog = CycleLogger();
-  CycleLogger exhaustTempLog = CycleLogger();
-
-  CycleLogger intakeOxyLog = CycleLogger();
-  CycleLogger exhaustOxyLog = CycleLogger();
-
   // Initialize SDL_image (supports PNG, JPG, etc.)
   if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
     SDL_Log(
@@ -68,62 +123,16 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  // Launch the simulation loop
+  std::thread simulationThread(EngineSimulation, &game.isRunning);
+
   /* Game Loop */
   while (game.isGameRunning()) {
+    cnt1++;
     const auto timeStart = high_resolution_clock::now();  // SDL_GetTicks();
 
     PistonGraphics pistonGraphics =
         PistonGraphics(vector2_T{.x = 350.f, .y = 600.f}, &piston, 2000);
-
-    if (start) {
-      gameLoopCnt++;
-
-      // Simulation
-
-      for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
-        const float deltaT = getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME);
-        const float t = 0.001f * (gameLoopCnt * FRAMETIME +
-                                  i * FRAMETIME / SIMULATION_MULTIPLIER);
-
-        piston.update(deltaT);
-
-        intakePresLog.addSample(PAToATM(piston.intakeGas->getP()));
-        exhaustPresLog.addSample(PAToATM(piston.exhaustGas->getP()));
-        intakeTempLog.addSample(KELVToCELS(piston.intakeGas->getT()));
-        exhaustTempLog.addSample(KELVToCELS(piston.exhaustGas->getT()));
-        // presLog->addSample(PAToATM(piston.gas->getP()));
-        // voluLog->addSample(M3ToCC(piston.gas->getV()));
-        nrLog.addSample(piston.gas->getnR());
-        // tempLog->addSample(KELVToCELS(piston.gas->getT()));
-        inflowLog.addSample(piston.gas->intakeFlow);
-        outflowLog.addSample(piston.gas->exhaustFlow);
-        oxyLog.addSample(piston.gas->getOx());
-        intakeOxyLog.addSample(piston.intakeGas->getOx());
-        exhaustOxyLog.addSample(piston.exhaustGas->getOx());
-        fuelLog.addSample(piston.gas->getFuel());
-
-        if (piston.cycleTrigger) {
-          intakePresLog.trig();
-          exhaustPresLog.trig();
-          intakeTempLog.trig();
-          exhaustTempLog.trig();
-          // presLog->trig();
-          // voluLog->trig();
-          nrLog.trig();
-          // tempLog->trig();
-          inflowLog.trig();
-          outflowLog.trig();
-          oxyLog.trig();
-          intakeOxyLog.trig();
-          exhaustOxyLog.trig();
-          fuelLog.trig();
-
-          piston.cycleTrigger = false;
-        }
-
-        // End Simulation
-      }
-    }
 
     ImGui_ImplSDLRenderer2_NewFrame();
     ImGui_ImplSDL2_NewFrame();
@@ -219,8 +228,7 @@ int main(int argc, char *argv[]) {
     ImGui::Begin("Test8");
     ImGui::Text("Time:       %.1f s", 0.001f * gameLoopCnt * FRAMETIME);
     ImGui::Text("Framerate:  %.0f Hz", 1000.f / FRAMETIME);
-    ImGui::Text(
-        "Simulation: %.0f Hz", SIMULATION_MULTIPLIER * 1000.f / FRAMETIME);
+    ImGui::Text("Simulation: %.0f Hz", SIMULATION_FREQUENCY);
     ImGui::Text("Engine Speed:  %.0f rpm", RADSToRPM(piston.getEngineSpeed()));
     ImGui::Text("Fuel Amnt:    %.3f mg", 1000000 * piston.gas->fuelInjected);
     ImGui::Text("Consumption:  %.3f g/h",
@@ -229,6 +237,10 @@ int main(int argc, char *argv[]) {
 
     ImGui::Text("Total cons:   %.3f g", 1000.f * piston.totalFuelConsumption);
     ImGui::Text("CPU Load:     %.0f / 100", 100 * cpuLoad);
+    ImGui::Text("Sim Load:     %.0f / 100", 100 * simLoad);
+
+    ImGui::Text("cnt1: %d", cnt1);
+    ImGui::Text("cnt2: %d", cnt2);
 
     ImGui::Checkbox("Start", &start);
     ImGui::Checkbox("Ignition", &piston.ignitionOn);
@@ -276,6 +288,9 @@ int main(int argc, char *argv[]) {
   ImGui_ImplSDL2_Shutdown();
   ImPlot::DestroyContext();
   ImGui::DestroyContext();
+
+  game.QuitGame();
+  simulationThread.join();
 
   game.Clean();
   return 0;

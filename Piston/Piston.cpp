@@ -53,11 +53,11 @@ Piston::Piston(CylinderGeometry geometryInfo)
                 getChamberVolume(),
                 DEFAULT_AMBIENT_TEMPERATURE,
                 1.f);
-  intakeGas = new Gas(3 * DEFAULT_AMBIENT_PRESSURE,
+  intakeGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
                       25.f * getChamberVolume(),
                       DEFAULT_AMBIENT_TEMPERATURE,
                       1.f);
-  exhaustGas = new Gas(3 * DEFAULT_AMBIENT_PRESSURE,
+  exhaustGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
                        70.f * getChamberVolume(),
                        DEFAULT_AMBIENT_TEMPERATURE,
                        1.f);
@@ -85,11 +85,11 @@ Piston::Piston(CylinderGeometry geometryInfo, float omega0)
                 DEFAULT_AMBIENT_TEMPERATURE,
                 1.f);
   intakeGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-                      100.f * getChamberVolume(),
+                      25.f * getChamberVolume(),
                       DEFAULT_AMBIENT_TEMPERATURE,
                       1.f);
   exhaustGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-                       100.f * getChamberVolume(),
+                       70.f * getChamberVolume(),
                        DEFAULT_AMBIENT_TEMPERATURE,
                        1.f);
 
@@ -193,7 +193,6 @@ void Piston::update(float deltaT) {
   // Spark plug event
   if (ignitionOn &&
       getHeadAngle() > std::numbers::pi - DEGToRAD(combustionAdvance)) {
-    
     if (!combustionInProgress) {
       gas->setFuelAmnt(14.7f);
       totalFuelConsumption += gas->fuelInjected;
