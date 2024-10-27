@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
@@ -13,9 +14,11 @@ constexpr float getTimeStep_s(int mult, float frametime) {
   return frametime / (1000.f * mult);
 }
 
-constexpr int SIMULATION_MULTIPLIER = 400;
+constexpr int SIMULATION_MULTIPLIER = 200;
 constexpr float FRAMETIME = 16.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
+
+float cpuLoad = 0.f;
 
 int main(int argc, char *argv[]) {
   bool start = false;
@@ -67,7 +70,7 @@ int main(int argc, char *argv[]) {
 
   /* Game Loop */
   while (game.isGameRunning()) {
-    const int timeStart = SDL_GetTicks();
+    const auto timeStart = high_resolution_clock::now();  // SDL_GetTicks();
 
     PistonGraphics pistonGraphics =
         PistonGraphics(vector2_T{.x = 350.f, .y = 600.f}, &piston, 2000);
@@ -225,6 +228,7 @@ int main(int argc, char *argv[]) {
                     RADSToHZ(piston.getEngineSpeed()));
 
     ImGui::Text("Total cons:   %.3f g", 1000.f * piston.totalFuelConsumption);
+    ImGui::Text("CPU Load:     %.0f / 100", 100 * cpuLoad);
 
     ImGui::Checkbox("Start", &start);
     ImGui::Checkbox("Ignition", &piston.ignitionOn);
@@ -257,7 +261,11 @@ int main(int argc, char *argv[]) {
     pistonGraphics.showPiston(game.renderer);
 
     /* Wait for next frame */
-    int delay = FRAMETIME - (SDL_GetTicks() - timeStart);
+    const auto timeEnd = high_resolution_clock::now();
+    const auto deltaTime =
+        duration_cast<microseconds>(timeEnd - timeStart).count();
+    const auto delay = FRAMETIME - (deltaTime / 1000);
+    cpuLoad = 0.99f * cpuLoad + 0.01f * deltaTime / (FRAMETIME * 1000);
     SDL_Delay((delay > 0) ? delay : 0);
 
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
