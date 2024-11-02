@@ -49,18 +49,18 @@ Piston::Piston(CylinderGeometry geometryInfo)
   rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
              .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
 
-  gas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-                getChamberVolume(),
-                DEFAULT_AMBIENT_TEMPERATURE,
-                1.f);
-  intakeGas = new Gas(3 * DEFAULT_AMBIENT_PRESSURE,
-                      25.f * getChamberVolume(),
-                      DEFAULT_AMBIENT_TEMPERATURE,
-                      1.f);
-  exhaustGas = new Gas(3 * DEFAULT_AMBIENT_PRESSURE,
-                       70.f * getChamberVolume(),
-                       DEFAULT_AMBIENT_TEMPERATURE,
-                       1.f);
+  // gas = new Gas(DEFAULT_AMBIENT_PRESSURE,
+  //               getChamberVolume(),
+  //               DEFAULT_AMBIENT_TEMPERATURE,
+  //               1.f);
+  // intakeGas = new Gas(3 * DEFAULT_AMBIENT_PRESSURE,
+  //                     25.f * getChamberVolume(),
+  //                     DEFAULT_AMBIENT_TEMPERATURE,
+  //                     1.f);
+  // exhaustGas = new Gas(3 * DEFAULT_AMBIENT_PRESSURE,
+  //                      70.f * getChamberVolume(),
+  //                      DEFAULT_AMBIENT_TEMPERATURE,
+  //                      1.f);
 
   ignitionOn = true;
 }
@@ -80,18 +80,18 @@ Piston::Piston(CylinderGeometry geometryInfo, float omega0)
   rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
              .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
 
-  gas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-                getChamberVolume(),
-                DEFAULT_AMBIENT_TEMPERATURE,
-                1.f);
-  intakeGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-                      100.f * getChamberVolume(),
-                      DEFAULT_AMBIENT_TEMPERATURE,
-                      1.f);
-  exhaustGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-                       100.f * getChamberVolume(),
-                       DEFAULT_AMBIENT_TEMPERATURE,
-                       1.f);
+  // gas = new Gas(DEFAULT_AMBIENT_PRESSURE,
+  //               getChamberVolume(),
+  //               DEFAULT_AMBIENT_TEMPERATURE,
+  //               1.f);
+  // intakeGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
+  //                     100.f * getChamberVolume(),
+  //                     DEFAULT_AMBIENT_TEMPERATURE,
+  //                     1.f);
+  // exhaustGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
+  //                      100.f * getChamberVolume(),
+  //                      DEFAULT_AMBIENT_TEMPERATURE,
+  //                      1.f);
 
   ignitionOn = true;
 }

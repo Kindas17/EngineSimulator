@@ -1,5 +1,6 @@
 #ifndef LOGGER_HPP_
 #define LOGGER_HPP_
+#include <functional>
 #include <vector>
 
 class Logger {
@@ -19,10 +20,14 @@ class CycleLogger {
   int which;
   std::vector<float> a;
   std::vector<float> b;
+  std::function<float()> sampleFun;
 
  public:
+  CycleLogger(const std::function<float()> &fun) : sampleFun{fun} {
+  }
+
   void trig();
-  void addSample(float sample);
+  void addSample();
   float *getData();
   std::size_t getSize();
   std::vector<float> getV();

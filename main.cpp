@@ -52,18 +52,18 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  // Example gasses
+  // Define the engine
   CylinderGeometry geometry = CylinderGeometry();
-  IdealGas gas1 = IdealGas(
-      1 * DEFAULT_AMBIENT_PRESSURE, 1.f, 4 * DEFAULT_AMBIENT_TEMPERATURE);
-  IdealGas gas2 = IdealGas(
-      1 * DEFAULT_AMBIENT_PRESSURE, 1.f, 1 * DEFAULT_AMBIENT_TEMPERATURE);
-  Orifice orif1 = Orifice(0.01f, gas1, gas2);
+  Piston piston = Piston(geometry);
+  PistonGraphics pistonGraphics =
+      PistonGraphics(vector2_T{.x = 350.f, .y = 600.f}, &piston, 2000);
+
+  // Define the loggers
+  // std::valarray<CycleLogger> loggers = {CycleLogger()};
 
   /* Game Loop */
   while (game.isGameRunning()) {
     const auto timeStart = high_resolution_clock::now();
-
     const float deltaT = getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME);
 
     if (start) {
@@ -71,31 +71,33 @@ int main(int argc, char *argv[]) {
 
       // Simulation
       for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
-        auto stp = orif1.flowThrough();
-        gas1.state = RungeKutta4(
-            deltaT,
-            0.f,
-            gas1.state,
-            std::bind(
-                F_IdealGas,
-                std::placeholders::_1,
-                std::placeholders::_2,
-                +stp + gas1.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
-        gas2.state = RungeKutta4(
-            deltaT,
-            0.f,
-            gas2.state,
-            std::bind(
-                F_IdealGas,
-                std::placeholders::_1,
-                std::placeholders::_2,
-                -stp - gas1.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
+        piston.update(deltaT);
 
-        std::cout << "Gas1 P: " << gas1.getP() << std::endl;
-        std::cout << "Gas2 P: " << gas2.getP() << std::endl;
-        std::cout << "Gas1 T: " << gas1.getT() << std::endl;
-        std::cout << "Gas2 T: " << gas2.getT() << std::endl;
-        std::cout << "---" << std::endl << std::endl;
+        // auto stp = orif1.flowThrough();
+        // gas1.state = RungeKutta4(
+        //     deltaT,
+        //     0.f,
+        //     gas1.state,
+        //     std::bind(
+        //         F_IdealGas,
+        //         std::placeholders::_1,
+        //         std::placeholders::_2,
+        //         +stp + gas1.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
+        // gas2.state = RungeKutta4(
+        //     deltaT,
+        //     0.f,
+        //     gas2.state,
+        //     std::bind(
+        //         F_IdealGas,
+        //         std::placeholders::_1,
+        //         std::placeholders::_2,
+        //         -stp - gas1.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
+
+        // std::cout << "Gas1 P: " << gas1.getP() << std::endl;
+        // std::cout << "Gas2 P: " << gas2.getP() << std::endl;
+        // std::cout << "Gas1 T: " << gas1.getT() << std::endl;
+        // std::cout << "Gas2 T: " << gas2.getT() << std::endl;
+        // std::cout << "---" << std::endl << std::endl;
       }
     }
 

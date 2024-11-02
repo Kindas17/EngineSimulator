@@ -19,11 +19,11 @@ std::size_t Logger::getSize() {
   return v.size();
 }
 
-void CycleLogger::addSample(float sample) {
+void CycleLogger::addSample() {
   if (which == 0) {
-    a.push_back(sample);
+    a.push_back(sampleFun());
   } else {
-    b.push_back(sample);
+    b.push_back(sampleFun());
   }
 }
 
