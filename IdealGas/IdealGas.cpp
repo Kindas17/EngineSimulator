@@ -8,8 +8,6 @@
 using namespace std::numbers;
 
 constexpr float AIR_GAMMA = 1.4f;
-// Critical Pdown / Pup
-constexpr float chokedFlowCondition = 1.f / 1.893f;
 
 IdealGas::IdealGas(float p, float v, float t) {
   state[0] = p;
@@ -20,32 +18,16 @@ IdealGas::IdealGas(float p, float v, float t) {
 
 std::valarray<float> F_IdealGas(float t,
                                 std::valarray<float> &st,
-                                float ang,
-                                float omega,
-                                CylinderGeometry g,
-                                float nRPrime,
-                                float QPrime) {
+                                std::valarray<float> stp) {
   const float a = IdealGas::alpha;
   const float P = st[0];
   const float V = st[1];
   const float nR = st[2];
   const float T = st[3];
-  const float h = g.stroke;
-  const float l = g.rod;
-  const float r = g.bore * 0.5f;
 
-  // VPrime computation
-  const float k = std::numbers::pi * h * pow(r, 2);
-  const float dx_1 = -h * cos(ang) * 0.5f;
-  const float dx_2_num = -h * h * sin(ang) * cos(ang);
-  const float dx_2_den = 4.f * l * sqrt(1.f - pow(h * cos(ang) * 0.5f / l, 2));
-  const float dx_2 = dx_2_num / dx_2_den;
-  const float dx = dx_1 + dx_2;
-  const float dcperc = -dx / h;
-
-  const float Vp = -k * dcperc * omega;
-  const float nRp = nRPrime;
-  const float Tp = (QPrime - a * nRp * T - P * Vp) / (a * nR);
+  const float Vp = stp[0];
+  const float nRp = stp[1];
+  const float Tp = (stp[2] - a * nRp * T - P * Vp) / (a * nR);
   const float Pp = (nRp * T + nR * Tp - P * Vp) / V;
 
   return std::valarray<float>{Pp, Vp, nRp, Tp};
@@ -61,13 +43,6 @@ void IdealGas::updateState(float kthermal,
   const float P = state[0];
   const float T = state[3];
   QPrime = 0.f;
-
-  const float rho_intake = Pout_int * M_air / (IDEAL_GAS_CONSTANT * Tout_int);
-  const float rho_chamber = P * M_air / (IDEAL_GAS_CONSTANT * T);
-  const float rho_exhaust = Pout_exh * M_air / (IDEAL_GAS_CONSTANT * Tout_exh);
-
-  float squaredFlowFunction;
-  float pDiff;
 
   // Intake flow
   if (Pout_int > P) {
@@ -95,6 +70,10 @@ void IdealGas::updateState(float kthermal,
 
   // Heat exchange: external world
   QPrime += kthermal * (DEFAULT_AMBIENT_TEMPERATURE - T);
+}
+
+std::valarray<float> IdealGas::exchangeHeat(float kTherm, float extTemp) {
+  return std::valarray<float>{0.f, 0.f, kTherm * (extTemp - getT())};
 }
 
 float gasFlowFunction(float Pup, float Pdown, float Tup, float Tdown) {

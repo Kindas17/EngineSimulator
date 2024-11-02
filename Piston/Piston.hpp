@@ -24,6 +24,7 @@ constexpr float RPMToHz(float X) {
 constexpr float RPMToRADS(float X) {
   return 2.f * std::numbers::pi * RPMToHz(X);
 }
+float chamberDisplacement(float ang, float omega, CylinderGeometry g);
 
 class Piston {
  public:

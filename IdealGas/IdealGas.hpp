@@ -5,6 +5,7 @@
 
 #include "Geometry.hpp"
 
+constexpr float IDEALGAS_ALPHA = 5.f / 2.f;
 constexpr float IDEAL_GAS_CONSTANT = 8.314f;
 // Approx molar mass of air in kg/mol
 constexpr float M_air = 0.029f;
@@ -22,11 +23,7 @@ float gasFlowFunction(float Pup, float Pdown, float Tup, float Tdown);
 
 std::valarray<float> F_IdealGas(float t,
                                 std::valarray<float> &st,
-                                float ang,
-                                float omega,
-                                CylinderGeometry g,
-                                float nRPrime,
-                                float QPrime);
+                                std::valarray<float> stp);
 
 class IdealGas {
  public:
@@ -44,6 +41,8 @@ class IdealGas {
   }
 
   IdealGas(float p, float v, float t);
+
+  std::valarray<float> exchangeHeat(float kTherm, float extTemp);
 
   static constexpr float alpha = 5.f / 2.f;
 

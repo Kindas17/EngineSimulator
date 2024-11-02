@@ -1,5 +1,6 @@
 #include <chrono>
 #include <cmath>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <numeric>
@@ -7,8 +8,10 @@
 #include "FrameRVis.hpp"
 #include "Game.hpp"
 #include "Logger.hpp"
+#include "Orifice.hpp"
 #include "Piston.hpp"
 #include "PistonGraphics.hpp"
+#include "Solver.hpp"
 
 constexpr float getTimeStep_s(int mult, float frametime) {
   return frametime / (1000.f * mult);
@@ -49,15 +52,50 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  // Example gasses
+  CylinderGeometry geometry = CylinderGeometry();
+  IdealGas gas1 = IdealGas(
+      1 * DEFAULT_AMBIENT_PRESSURE, 1.f, 4 * DEFAULT_AMBIENT_TEMPERATURE);
+  IdealGas gas2 = IdealGas(
+      1 * DEFAULT_AMBIENT_PRESSURE, 1.f, 1 * DEFAULT_AMBIENT_TEMPERATURE);
+  Orifice orif1 = Orifice(0.01f, gas1, gas2);
+
   /* Game Loop */
   while (game.isGameRunning()) {
-    const auto timeStart = high_resolution_clock::now();  // SDL_GetTicks();
+    const auto timeStart = high_resolution_clock::now();
+
+    const float deltaT = getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME);
 
     if (start) {
       gameLoopCnt++;
 
+      // Simulation
       for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
-        // Simulation
+        auto stp = orif1.flowThrough();
+        gas1.state = RungeKutta4(
+            deltaT,
+            0.f,
+            gas1.state,
+            std::bind(
+                F_IdealGas,
+                std::placeholders::_1,
+                std::placeholders::_2,
+                +stp + gas1.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
+        gas2.state = RungeKutta4(
+            deltaT,
+            0.f,
+            gas2.state,
+            std::bind(
+                F_IdealGas,
+                std::placeholders::_1,
+                std::placeholders::_2,
+                -stp - gas1.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
+
+        std::cout << "Gas1 P: " << gas1.getP() << std::endl;
+        std::cout << "Gas2 P: " << gas2.getP() << std::endl;
+        std::cout << "Gas1 T: " << gas1.getT() << std::endl;
+        std::cout << "Gas2 T: " << gas2.getT() << std::endl;
+        std::cout << "---" << std::endl << std::endl;
       }
     }
 

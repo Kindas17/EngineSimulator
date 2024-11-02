@@ -1,12 +1,18 @@
 #ifndef ORIFICE_HPP
 #define ORIFICE_HPP
 
+#include "Gas.hpp"
+
 class Orifice {
  public:
-  Orifice();
+  Orifice(float k_flow, IdealGas &gas1, IdealGas &gas2);
 
-  private:
+  std::valarray<float> flowThrough();
+
+ private:
   float k_flow{0};
+  IdealGas &gas1;
+  IdealGas &gas2;
 };
 
 #endif

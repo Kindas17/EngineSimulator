@@ -4,14 +4,10 @@
 
 std::valarray<float> F_Gas(float t,
                            std::valarray<float> &st,
-                           float ang,
-                           float omega,
-                           CylinderGeometry g,
-                           float nRPrime,
-                           float QPrime,
+                           std::valarray<float> stp,
                            float oxPrime,
                            float fuelPrime) {
-  auto stPrime = F_IdealGas(t, st, ang, omega, g, nRPrime, QPrime);
+  auto stPrime = F_IdealGas(t, st, stp);
   stPrime[4] = oxPrime;
   stPrime[5] = fuelPrime;
 
@@ -40,19 +36,19 @@ void Gas::updateState(float kthermal,
   IdealGas::updateState(
       kthermal, kFlow_int, kFlow_exh, Pout_int, Pout_exh, Tout_int, Tout_exh);
 
-  const float k_oxy = 50.f;
+  // const float k_oxy = 50.f;
 
-  const float oxPrime_int =
-      (intakeFlow > 0.f) ? k_oxy * intakeFlow * (ox_int - state[4]) : 0.f;
-  const float oxPrime_exh =
-      (exhaustFlow > 0.f) ? k_oxy * exhaustFlow * (ox_exh - state[4]) : 0.f;
+  // const float oxPrime_int =
+  //     (intakeFlow > 0.f) ? k_oxy * intakeFlow * (ox_int - state[4]) : 0.f;
+  // const float oxPrime_exh =
+  //     (exhaustFlow > 0.f) ? k_oxy * exhaustFlow * (ox_exh - state[4]) : 0.f;
 
-  // Combustion
-  const float oxPrime_combustion = -kcs * state[2] * state[4];
-  // QPrime += -kce * oxPrime_combustion;
+  // // Combustion
+  // const float oxPrime_combustion = -kcs * state[2] * state[4];
+  // // QPrime += -kce * oxPrime_combustion;
 
-  fuelPrime = -100.f * state[5];
-  QPrime += -fuelPrime * kce * 100000.f;
+  // fuelPrime = -100.f * state[5];
+  // QPrime += -fuelPrime * kce * 100000.f;
 
-  oxPrime = oxPrime_int + oxPrime_exh + oxPrime_combustion;
+  // oxPrime = oxPrime_int + oxPrime_exh + oxPrime_combustion;
 }

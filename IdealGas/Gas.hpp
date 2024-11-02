@@ -5,11 +5,7 @@
 
 std::valarray<float> F_Gas(float t,
                            std::valarray<float> &st,
-                           float ang,
-                           float omega,
-                           CylinderGeometry g,
-                           float nRPrime,
-                           float QPrime,
+                           std::valarray<float> stp,
                            float oxPrime,
                            float fuelPrime);
 
