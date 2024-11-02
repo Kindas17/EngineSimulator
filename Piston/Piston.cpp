@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <functional>
+#include <iostream>
 #include <numbers>
 
 #include "Solver.hpp"
@@ -30,7 +31,7 @@ static std::valarray<float> F_piston(float t,
   const float omega = st[1];
 
   const float thetap = omega;
-  const float omegap = Ti + Te;
+  const float omegap = 0.f;  // Ti + Te;
 
   return std::valarray<float>{thetap, omegap};
 }
@@ -43,24 +44,11 @@ Piston::Piston(CylinderGeometry geometryInfo)
   geometry = geometryInfo;
 
   /* Dynamics */
-  state = std::valarray<float>{DEGToRAD(0.f), 0.f};
+  state = std::valarray<float>{DEGToRAD(0.f), 15.f};
 
   /* Initial update to initialize the piston status */
   rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
              .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
-
-  // gas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-  //               getChamberVolume(),
-  //               DEFAULT_AMBIENT_TEMPERATURE,
-  //               1.f);
-  // intakeGas = new Gas(3 * DEFAULT_AMBIENT_PRESSURE,
-  //                     25.f * getChamberVolume(),
-  //                     DEFAULT_AMBIENT_TEMPERATURE,
-  //                     1.f);
-  // exhaustGas = new Gas(3 * DEFAULT_AMBIENT_PRESSURE,
-  //                      70.f * getChamberVolume(),
-  //                      DEFAULT_AMBIENT_TEMPERATURE,
-  //                      1.f);
 
   ignitionOn = true;
 }
@@ -117,78 +105,19 @@ void Piston::update(float deltaT) {
   // Update valve position
   ValveMgm();
 
-  // // Update gas state
-  // gas->updateState(kthermal,
-  //                  getThrottle(throttle) * intakeValve * intakeCoef,
-  //                  exhaustCoef * exhaustValve,
-  //                  intakeGas->getP(),
-  //                  exhaustGas->getP(),
-  //                  intakeGas->getT(),
-  //                  exhaustGas->getT(),
-  //                  intakeGas->getOx(),
-  //                  exhaustGas->getOx(),
-  //                  combustionInProgress ? combustionSpeed : 0.f,
-  //                  combustionEnergy);
-  // intakeGas->updateState(kthermal,
-  //                        0.001f,
-  //                        getThrottle(throttle) * intakeValve * intakeCoef,
-  //                        DEFAULT_AMBIENT_PRESSURE,
-  //                        gas->getP(),
-  //                        DEFAULT_AMBIENT_TEMPERATURE,
-  //                        gas->getT(),
-  //                        1.f,
-  //                        gas->getOx(),
-  //                        0.f,
-  //                        0.f);
-  // exhaustGas->updateState(kthermal,
-  //                         0.001f,
-  //                         exhaustCoef * exhaustValve,
-  //                         DEFAULT_AMBIENT_PRESSURE,
-  //                         gas->getP(),
-  //                         DEFAULT_AMBIENT_TEMPERATURE,
-  //                         gas->getT(),
-  //                         1.f,
-  //                         gas->getOx(),
-  //                         0.f,
-  //                         0.f);
-
-  // std::function<std::valarray<float>(float, std::valarray<float> &)> F3 =
-  //     std::bind(F_Gas,
-  //               _1,
-  //               _2,
-  //               getCurrentAngle(),
-  //               getEngineSpeed(),
-  //               geometry,
-  //               gas->nRPrime,
-  //               gas->QPrime,
-  //               gas->oxPrime,
-  //               gas->fuelPrime);
-  // std::function<std::valarray<float>(float, std::valarray<float> &)> F4 =
-  //     std::bind(F_Gas,
-  //               _1,
-  //               _2,
-  //               0.f,
-  //               0.f,
-  //               geometry,
-  //               intakeGas->nRPrime,
-  //               intakeGas->QPrime,
-  //               intakeGas->oxPrime,
-  //               intakeGas->fuelPrime);
-  // std::function<std::valarray<float>(float, std::valarray<float> &)> F5 =
-  //     std::bind(F_Gas,
-  //               _1,
-  //               _2,
-  //               0.f,
-  //               0.f,
-  //               geometry,
-  //               exhaustGas->nRPrime,
-  //               exhaustGas->QPrime,
-  //               exhaustGas->oxPrime,
-  //               intakeGas->fuelPrime);
-
-  // gas->state = RungeKutta4(deltaT, 0.f, gas->state, F3);
-  // intakeGas->state = RungeKutta4(deltaT, 0.f, intakeGas->state, F4);
-  // exhaustGas->state = RungeKutta4(deltaT, 0.f, exhaustGas->state, F5);
+  intakeValveOrif.setKFlow(getThrottle(throttle) * intakeValve * intakeCoef);
+  const auto stp1 = intakeValveOrif.flowThrough();
+  const auto stp2 = chamberDisplacement();
+  const auto stp = stp1 + stp2;
+  intakeFlow = stp[1];
+  gas.state = RungeKutta4(
+      deltaT,
+      0.f,
+      gas.state,
+      std::bind(F_IdealGas,
+                std::placeholders::_1,
+                std::placeholders::_2,
+                +stp + gas.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
 
   // Spark plug event
   if (ignitionOn &&
@@ -298,10 +227,12 @@ void Piston::setEngineSpeed(float omega) {
   state[1] = omega * 0.5f;
 }
 
-float chamberDisplacement(float ang, float omega, CylinderGeometry g) {
-  const float h = g.stroke;
-  const float l = g.rod;
-  const float r = g.bore * 0.5f;
+std::valarray<float> Piston::chamberDisplacement() {
+  const float h = geometry.stroke;
+  const float l = geometry.rod;
+  const float r = geometry.bore * 0.5f;
+  const float ang = getCurrentAngle();
+  const float omega = getEngineSpeed();
 
   // VPrime computation
   const float k = std::numbers::pi * h * pow(r, 2);
@@ -312,5 +243,5 @@ float chamberDisplacement(float ang, float omega, CylinderGeometry g) {
   const float dx = dx_1 + dx_2;
   const float dcperc = -dx / h;
 
-  return -k * dcperc * omega;
+  return std::valarray<float>{-k * dcperc * omega, 0.f, 0.f};
 }

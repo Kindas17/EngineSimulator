@@ -5,6 +5,7 @@
 #include "Gas.hpp"
 #include "Geometry.hpp"
 #include "Linalg.hpp"
+#include "Orifice.hpp"
 
 constexpr float DEGToRAD(float X) {
   return (2.0 * std::numbers::pi * (X) / 360.f);
@@ -68,18 +69,10 @@ class Piston {
   float getHeadAngle();
   float getTorque();
   float getEngineSpeed();
+  std::valarray<float> chamberDisplacement();
   constexpr float getThrottle(float curr);
 
   void setEngineSpeed(float omega);
-
-  /* Thermodynamics */
-  Gas gas{Gas(DEFAULT_AMBIENT_PRESSURE,
-              getChamberVolume(),
-              DEFAULT_AMBIENT_TEMPERATURE,
-              1.f)};
-  // Gas intakeGas;
-  // Gas exhaustGas;
-  bool combustionInProgress;
 
   /* Valves */
   float intakeValve;
@@ -89,6 +82,21 @@ class Piston {
   float leakageFlow{};
   float intakeCoef{0.003f};
   float exhaustCoef{0.002f};
+
+  /* Thermodynamics */
+  Gas gas{Gas(DEFAULT_AMBIENT_PRESSURE,
+              getChamberVolume(),
+              DEFAULT_AMBIENT_TEMPERATURE,
+              1.f)};
+  Gas intakeManifold{
+      Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 1.f)};
+
+  Gas exhaustPipe{
+      Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 1.f)};
+
+  Orifice intakeValveOrif{Orifice(0.f, gas, intakeManifold)};
+
+  bool combustionInProgress;
 
   /* Settings */
   bool dynamicsIsActive;

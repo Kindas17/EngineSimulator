@@ -9,6 +9,10 @@ class Orifice {
 
   std::valarray<float> flowThrough();
 
+  void setKFlow(float new_k_flow) {
+    k_flow = new_k_flow;
+  }
+
  private:
   float k_flow{0};
   IdealGas &gas1;

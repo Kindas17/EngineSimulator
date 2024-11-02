@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <iostream>
 #include <numeric>
+#include <thread>
+#include <vector>
 
 #include "FrameRVis.hpp"
 #include "Game.hpp"
@@ -20,6 +22,10 @@ constexpr float getTimeStep_s(int mult, float frametime) {
 constexpr int SIMULATION_MULTIPLIER = 200;
 constexpr float FRAMETIME = 16.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
+
+constexpr float simulationFrequency() {
+  return SIMULATION_MULTIPLIER * 1000.f / FRAMETIME;
+}
 
 float cpuLoad = 0.f;
 
@@ -59,7 +65,11 @@ int main(int argc, char *argv[]) {
       PistonGraphics(vector2_T{.x = 350.f, .y = 600.f}, &piston, 2000);
 
   // Define the loggers
-  // std::valarray<CycleLogger> loggers = {CycleLogger()};
+  std::vector<CycleLogger> loggers = {
+      CycleLogger([&piston]() { return PAToATM(piston.gas.getP()); }),
+      CycleLogger([&piston]() { return piston.intakeFlow; }),
+      CycleLogger([&piston]() { return KELVToCELS(piston.gas.getT()); }),
+      CycleLogger([&piston]() { return piston.gas.getnR(); })};
 
   /* Game Loop */
   while (game.isGameRunning()) {
@@ -73,31 +83,16 @@ int main(int argc, char *argv[]) {
       for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
         piston.update(deltaT);
 
-        // auto stp = orif1.flowThrough();
-        // gas1.state = RungeKutta4(
-        //     deltaT,
-        //     0.f,
-        //     gas1.state,
-        //     std::bind(
-        //         F_IdealGas,
-        //         std::placeholders::_1,
-        //         std::placeholders::_2,
-        //         +stp + gas1.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
-        // gas2.state = RungeKutta4(
-        //     deltaT,
-        //     0.f,
-        //     gas2.state,
-        //     std::bind(
-        //         F_IdealGas,
-        //         std::placeholders::_1,
-        //         std::placeholders::_2,
-        //         -stp - gas1.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
+        for (size_t i = 0; i < loggers.size(); i++) {
+          loggers[i].addSample();
+        }
 
-        // std::cout << "Gas1 P: " << gas1.getP() << std::endl;
-        // std::cout << "Gas2 P: " << gas2.getP() << std::endl;
-        // std::cout << "Gas1 T: " << gas1.getT() << std::endl;
-        // std::cout << "Gas2 T: " << gas2.getT() << std::endl;
-        // std::cout << "---" << std::endl << std::endl;
+        if (piston.cycleTrigger) {
+          for (size_t i = 0; i < loggers.size(); i++) {
+            loggers[i].trig();
+          }
+          piston.cycleTrigger = false;
+        }
       }
     }
 
@@ -105,20 +100,43 @@ int main(int argc, char *argv[]) {
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
-    // ImGui::Begin("Fuel Amount");
-    // ImPlot::SetNextAxesToFit();
-    // ImPlot::BeginPlot("ASD");
-    // ImPlot::PlotLine("Fuel Amount", fuelLog.getData(), fuelLog.getSize());
-    // ImPlot::EndPlot();
-    // ImGui::End();
+    ImGui::Begin("Test");
+    ImGui::SliderFloat("Throttle", &piston.throttle, 0.f, 1.f);
+    ImGui::End();
+
+    ImGui::Begin("ASD 1");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Pressure", loggers[0].getData(), loggers[0].getSize());
+    ImPlot::EndPlot();
+    ImGui::End();
+
+    ImGui::Begin("ASD 2");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Valve flow", loggers[1].getData(), loggers[1].getSize());
+    ImPlot::EndPlot();
+    ImGui::End();
+
+    ImGui::Begin("ASD 3");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Temperature", loggers[2].getData(), loggers[2].getSize());
+    ImPlot::EndPlot();
+    ImGui::End();
+
+    ImGui::Begin("ASD 4");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("nR", loggers[3].getData(), loggers[3].getSize());
+    ImPlot::EndPlot();
+    ImGui::End();
 
     ImGui::Begin("Test8");
     ImGui::Text("Time:       %.1f s", 0.001f * gameLoopCnt * FRAMETIME);
     ImGui::Text("Framerate:  %.0f Hz", 1000.f / FRAMETIME);
-    ImGui::Text(
-        "Simulation: %.0f Hz", SIMULATION_MULTIPLIER * 1000.f / FRAMETIME);
+    ImGui::Text("Simulation: %.0f Hz", simulationFrequency());
     ImGui::Text("CPU Load:     %.0f / 100", 100 * cpuLoad);
-
     ImGui::Checkbox("Start", &start);
     ImGui::End();
 
@@ -128,13 +146,16 @@ int main(int argc, char *argv[]) {
     game.handleEvents();
     game.RenderClear();
 
+    pistonGraphics.showPiston(game.renderer);
+
     /* Wait for next frame */
     const auto timeEnd = high_resolution_clock::now();
     const auto deltaTime =
         duration_cast<microseconds>(timeEnd - timeStart).count();
     const auto delay = FRAMETIME - (deltaTime / 1000);
     cpuLoad = 0.99f * cpuLoad + 0.01f * deltaTime / (FRAMETIME * 1000);
-    SDL_Delay((delay > 0) ? delay : 0);
+    std::this_thread::sleep_for(std::chrono::microseconds(
+        static_cast<int>(FRAMETIME * 1000) - deltaTime));
 
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
     game.RenderPresent();
