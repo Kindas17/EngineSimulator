@@ -65,36 +65,36 @@ Piston::Piston(CylinderGeometry geometryInfo)
   ignitionOn = true;
 }
 
-Piston::Piston(CylinderGeometry geometryInfo, float omega0)
-    : externalTorque{},
-      combustionInProgress(false),
-      throttle(0.f),
-      dynamicsIsActive(false) {
-  geometry = geometryInfo;
+// Piston::Piston(CylinderGeometry geometryInfo, float omega0)
+//     : externalTorque{},
+//       combustionInProgress(false),
+//       throttle(0.f),
+//       dynamicsIsActive(false) {
+//   geometry = geometryInfo;
 
-  /* Dynamics */
-  state = std::valarray<float>{DEGToRAD(0.f), omega0};
-  killDynamics = true;
+//   /* Dynamics */
+//   state = std::valarray<float>{DEGToRAD(0.f), omega0};
+//   killDynamics = true;
 
-  /* Initial update to initialize the piston status */
-  rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
-             .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
+//   /* Initial update to initialize the piston status */
+//   rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
+//              .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
 
-  // gas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-  //               getChamberVolume(),
-  //               DEFAULT_AMBIENT_TEMPERATURE,
-  //               1.f);
-  // intakeGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-  //                     100.f * getChamberVolume(),
-  //                     DEFAULT_AMBIENT_TEMPERATURE,
-  //                     1.f);
-  // exhaustGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-  //                      100.f * getChamberVolume(),
-  //                      DEFAULT_AMBIENT_TEMPERATURE,
-  //                      1.f);
+//   // gas = new Gas(DEFAULT_AMBIENT_PRESSURE,
+//   //               getChamberVolume(),
+//   //               DEFAULT_AMBIENT_TEMPERATURE,
+//   //               1.f);
+//   // intakeGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
+//   //                     100.f * getChamberVolume(),
+//   //                     DEFAULT_AMBIENT_TEMPERATURE,
+//   //                     1.f);
+//   // exhaustGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
+//   //                      100.f * getChamberVolume(),
+//   //                      DEFAULT_AMBIENT_TEMPERATURE,
+//   //                      1.f);
 
-  ignitionOn = true;
-}
+//   ignitionOn = true;
+// }
 
 void Piston::update(float deltaT) {
   const float previousHeadAngle = getHeadAngle();
@@ -194,8 +194,8 @@ void Piston::update(float deltaT) {
   if (ignitionOn &&
       getHeadAngle() > std::numbers::pi - DEGToRAD(combustionAdvance)) {
     if (!combustionInProgress) {
-      gas->setFuelAmnt(14.7f);
-      totalFuelConsumption += gas->fuelInjected;
+      gas.setFuelAmnt(14.7f);
+      totalFuelConsumption += gas.fuelInjected;
     }
     combustionInProgress = true;
   }
@@ -275,7 +275,7 @@ float Piston::getThetaAngle() {
 
 float Piston::getTorque() {
   const float pistonSurface = std::numbers::pi * pow(geometry.bore * 0.5f, 2);
-  const float topPistonPressure = gas->getP();
+  const float topPistonPressure = gas.getP();
 
   const float force =
       pistonSurface * (topPistonPressure - 101325.f) * cos(getThetaAngle());

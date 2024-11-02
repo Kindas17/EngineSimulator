@@ -73,10 +73,12 @@ class Piston {
   void setEngineSpeed(float omega);
 
   /* Thermodynamics */
-  // IdealGas *gas;
-  Gas *gas;
-  Gas *intakeGas;
-  Gas *exhaustGas;
+  Gas gas{Gas(DEFAULT_AMBIENT_PRESSURE,
+              getChamberVolume(),
+              DEFAULT_AMBIENT_TEMPERATURE,
+              1.f)};
+  // Gas intakeGas;
+  // Gas exhaustGas;
   bool combustionInProgress;
 
   /* Valves */
