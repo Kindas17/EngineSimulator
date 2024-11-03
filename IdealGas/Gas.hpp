@@ -5,9 +5,7 @@
 
 std::valarray<float> F_Gas(float t,
                            std::valarray<float> &st,
-                           std::valarray<float> stp,
-                           float oxPrime,
-                           float fuelPrime);
+                           std::valarray<float> stp);
 
 class Gas : public IdealGas {
  public:

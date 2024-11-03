@@ -4,9 +4,7 @@
 
 std::valarray<float> F_Gas(float t,
                            std::valarray<float> &st,
-                           std::valarray<float> stp,
-                           float oxPrime,
-                           float fuelPrime) {
+                           std::valarray<float> stp) {
   auto stPrime = F_IdealGas(t, st, stp);
   stPrime[4] = stp[3];
   stPrime[5] = stp[4];

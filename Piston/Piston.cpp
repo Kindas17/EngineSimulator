@@ -106,10 +106,10 @@ void Piston::update(float deltaT) {
   ValveMgm();
 
   intakeValveOrif.setKFlow(getThrottle(throttle) * intakeValve * intakeCoef);
-  const auto stp1 = intakeValveOrif.flowThrough();
-  const auto stp2 = chamberDisplacement();
-  const auto stp = stp1 + stp2;
-  intakeFlow = stp[1];
+  const auto stp1_int = intakeValveOrif.flowThrough();
+  const auto stp2_int = chamberDisplacement();
+  const auto stp_int = stp1_int + stp2_int;
+  intakeFlow = stp_int[1];
   gas.state = RungeKutta4(
       deltaT,
       0.f,
@@ -117,9 +117,21 @@ void Piston::update(float deltaT) {
       std::bind(F_Gas,
                 std::placeholders::_1,
                 std::placeholders::_2,
-                +stp + gas.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE),
-                0.f,
-                0.f));
+                +stp_int + gas.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
+
+  exhaustValveOrif.setKFlow(exhaustValve * exhaustCoef);
+  const auto stp1_exh = exhaustValveOrif.flowThrough();
+  const auto stp2_exh = chamberDisplacement();
+  const auto stp_exh = stp1_exh + stp2_exh;
+  exhaustFlow = stp_exh[1];
+  gas.state = RungeKutta4(
+      deltaT,
+      0.f,
+      gas.state,
+      std::bind(F_Gas,
+                std::placeholders::_1,
+                std::placeholders::_2,
+                +stp_exh + gas.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
 
   // Spark plug event
   if (ignitionOn &&

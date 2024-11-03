@@ -95,6 +95,7 @@ class Piston {
       Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 1.f)};
 
   Orifice intakeValveOrif{Orifice(0.f, gas, intakeManifold)};
+  Orifice exhaustValveOrif{Orifice(0.f, gas, exhaustPipe)};
 
   bool combustionInProgress;
 
