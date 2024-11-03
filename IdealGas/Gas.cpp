@@ -20,6 +20,13 @@ Gas::Gas(float p, float v, float t, float o) : IdealGas(p, v, t) {
   fuelInjected = 0.f;
 }
 
+std::valarray<float> Gas::combust(float kcs, float kce) {
+  float oxPrime = -kcs * state[2] * state[4];
+  float fuelPrime = -100.f * state[5];
+  float QPrime = -fuelPrime * kce * 100000.f;
+  return std::valarray<float>{0.f, 0.f, QPrime, oxPrime, fuelPrime};
+}
+
 void Gas::updateState(float kthermal,
                       float kFlow_int,
                       float kFlow_exh,

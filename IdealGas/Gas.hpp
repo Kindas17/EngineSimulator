@@ -15,6 +15,8 @@ class Gas : public IdealGas {
 
   Gas(float p, float v, float t, float o);
 
+  std::valarray<float> combust(float kcs, float kce);
+
   void updateState(float kthermal,
                    float kFlow_int,
                    float kFlow_exh,

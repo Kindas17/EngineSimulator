@@ -31,7 +31,7 @@ static std::valarray<float> F_piston(float t,
   const float omega = st[1];
 
   const float thetap = omega;
-  const float omegap = 0.f;  // Ti + Te;
+  const float omegap = Ti + Te;
 
   return std::valarray<float>{thetap, omegap};
 }
@@ -44,7 +44,7 @@ Piston::Piston(CylinderGeometry geometryInfo)
   geometry = geometryInfo;
 
   /* Dynamics */
-  state = std::valarray<float>{DEGToRAD(0.f), 15.f};
+  state = std::valarray<float>{DEGToRAD(0.f), 0.f};
 
   /* Initial update to initialize the piston status */
   rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
@@ -132,6 +132,15 @@ void Piston::update(float deltaT) {
                 std::placeholders::_1,
                 std::placeholders::_2,
                 +stp_exh + gas.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
+
+  auto stp_comb =
+      gas.combust(combustionInProgress ? combustionSpeed : 0.f, 1000.f);
+  gas.state = RungeKutta4(
+      deltaT,
+      0.f,
+      gas.state,
+      std::bind(
+          F_Gas, std::placeholders::_1, std::placeholders::_2, +stp_comb));
 
   // Spark plug event
   if (ignitionOn &&
@@ -257,5 +266,5 @@ std::valarray<float> Piston::chamberDisplacement() {
   const float dx = dx_1 + dx_2;
   const float dcperc = -dx / h;
 
-  return std::valarray<float>{-k * dcperc * omega, 0.f, 0.f};
+  return std::valarray<float>{-k * dcperc * omega, 0.f, 0.f, 0.f, 0.f};
 }

@@ -92,7 +92,7 @@ class Piston {
       Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 1.f)};
 
   Gas exhaustPipe{
-      Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 1.f)};
+      Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 0.f)};
 
   Orifice intakeValveOrif{Orifice(0.f, gas, intakeManifold)};
   Orifice exhaustValveOrif{Orifice(0.f, gas, exhaustPipe)};

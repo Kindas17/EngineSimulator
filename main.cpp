@@ -70,7 +70,8 @@ int main(int argc, char *argv[]) {
       CycleLogger([&piston]() { return piston.intakeFlow; }),
       CycleLogger([&piston]() { return KELVToCELS(piston.gas.getT()); }),
       CycleLogger([&piston]() { return piston.gas.getOx(); }),
-      CycleLogger([&piston]() { return piston.exhaustFlow; })};
+      CycleLogger([&piston]() { return piston.exhaustFlow; }),
+      CycleLogger([&piston]() { return piston.gas.getFuel(); })};
 
   /* Game Loop */
   while (game.isGameRunning()) {
@@ -103,6 +104,7 @@ int main(int argc, char *argv[]) {
 
     ImGui::Begin("Test");
     ImGui::SliderFloat("Throttle", &piston.throttle, 0.f, 1.f);
+    ImGui::SliderFloat("Torque [Nm]", &piston.externalTorque, 0.f, 20.f);
     ImGui::End();
 
     ImGui::Begin("ASD 1");
@@ -116,7 +118,8 @@ int main(int argc, char *argv[]) {
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
     ImPlot::PlotLine("Intake flow", loggers[1].getData(), loggers[1].getSize());
-    ImPlot::PlotLine("Exhaust flow", loggers[4].getData(), loggers[4].getSize());
+    ImPlot::PlotLine(
+        "Exhaust flow", loggers[4].getData(), loggers[4].getSize());
     ImPlot::EndPlot();
     ImGui::End();
 
@@ -131,6 +134,7 @@ int main(int argc, char *argv[]) {
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
     ImPlot::PlotLine("O2", loggers[3].getData(), loggers[3].getSize());
+    ImPlot::PlotLine("Fuel", loggers[5].getData(), loggers[5].getSize());
     ImPlot::EndPlot();
     ImGui::End();
 
@@ -138,8 +142,10 @@ int main(int argc, char *argv[]) {
     ImGui::Text("Time:       %.1f s", 0.001f * gameLoopCnt * FRAMETIME);
     ImGui::Text("Framerate:  %.0f Hz", 1000.f / FRAMETIME);
     ImGui::Text("Simulation: %.0f Hz", simulationFrequency());
+    ImGui::Text("Engine Speed:  %.0f rpm", RADSToRPM(piston.getEngineSpeed()));
     ImGui::Text("CPU Load:     %.0f / 100", 100 * cpuLoad);
     ImGui::Checkbox("Start", &start);
+    ImGui::Checkbox("Ignition", &piston.ignitionOn);
     ImGui::End();
 
     /* Rendering */
