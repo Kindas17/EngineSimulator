@@ -114,10 +114,12 @@ void Piston::update(float deltaT) {
       deltaT,
       0.f,
       gas.state,
-      std::bind(F_IdealGas,
+      std::bind(F_Gas,
                 std::placeholders::_1,
                 std::placeholders::_2,
-                +stp + gas.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
+                +stp + gas.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE),
+                0.f,
+                0.f));
 
   // Spark plug event
   if (ignitionOn &&

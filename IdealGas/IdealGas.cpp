@@ -73,7 +73,7 @@ void IdealGas::updateState(float kthermal,
 }
 
 std::valarray<float> IdealGas::exchangeHeat(float kTherm, float extTemp) {
-  return std::valarray<float>{0.f, 0.f, kTherm * (extTemp - getT())};
+  return std::valarray<float>{0.f, 0.f, kTherm * (extTemp - getT()), 0.f, 0.f};
 }
 
 float gasFlowFunction(float Pup, float Pdown, float Tup, float Tdown) {

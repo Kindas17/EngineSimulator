@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-Orifice::Orifice(float k_flow, IdealGas &gas1, IdealGas &gas2)
+Orifice::Orifice(float k_flow, Gas &gas1, Gas &gas2)
     : k_flow{k_flow}, gas1{gas1}, gas2{gas2} {
 }
 
@@ -20,6 +20,12 @@ std::valarray<float> Orifice::flowThrough() {
 
   // TODO: Consider the heat diffusion through the orifice
 
-  // Create the derived state vector [V', nR', Q']
-  return std::valarray<float>{0.f, nRPrime, QPrime};
+  // Oxygenation
+  const float k_ox = 50.f;
+  const float oxPrime = (nRPrime > 0.f)
+                            ? k_ox * nRPrime * (gas2.getOx() - gas1.getOx())
+                            : k_ox * nRPrime * (gas1.getOx() - gas2.getOx());
+
+  // Create the derived state vector [V', nR', Q', ox', fuel']
+  return std::valarray<float>{0.f, nRPrime, QPrime, oxPrime, 0.f};
 }

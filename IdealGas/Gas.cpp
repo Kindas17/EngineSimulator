@@ -8,8 +8,8 @@ std::valarray<float> F_Gas(float t,
                            float oxPrime,
                            float fuelPrime) {
   auto stPrime = F_IdealGas(t, st, stp);
-  stPrime[4] = oxPrime;
-  stPrime[5] = fuelPrime;
+  stPrime[4] = stp[3];
+  stPrime[5] = stp[4];
 
   return stPrime;
 }

@@ -5,7 +5,7 @@
 
 class Orifice {
  public:
-  Orifice(float k_flow, IdealGas &gas1, IdealGas &gas2);
+  Orifice(float k_flow, Gas &gas1, Gas &gas2);
 
   std::valarray<float> flowThrough();
 
@@ -15,8 +15,8 @@ class Orifice {
 
  private:
   float k_flow{0};
-  IdealGas &gas1;
-  IdealGas &gas2;
+  Gas &gas1;
+  Gas &gas2;
 };
 
 #endif

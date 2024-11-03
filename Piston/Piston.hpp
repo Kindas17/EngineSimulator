@@ -87,7 +87,7 @@ class Piston {
   Gas gas{Gas(DEFAULT_AMBIENT_PRESSURE,
               getChamberVolume(),
               DEFAULT_AMBIENT_TEMPERATURE,
-              1.f)};
+              0.f)};
   Gas intakeManifold{
       Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 1.f)};
 

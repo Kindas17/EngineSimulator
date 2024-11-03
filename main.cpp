@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
       CycleLogger([&piston]() { return PAToATM(piston.gas.getP()); }),
       CycleLogger([&piston]() { return piston.intakeFlow; }),
       CycleLogger([&piston]() { return KELVToCELS(piston.gas.getT()); }),
-      CycleLogger([&piston]() { return piston.gas.getnR(); })};
+      CycleLogger([&piston]() { return piston.gas.getOx(); })};
 
   /* Game Loop */
   while (game.isGameRunning()) {
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
     ImGui::Begin("ASD 4");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("nR", loggers[3].getData(), loggers[3].getSize());
+    ImPlot::PlotLine("O2", loggers[3].getData(), loggers[3].getSize());
     ImPlot::EndPlot();
     ImGui::End();
 
