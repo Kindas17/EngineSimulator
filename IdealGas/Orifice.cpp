@@ -26,6 +26,11 @@ std::valarray<float> Orifice::flowThrough() {
                             ? k_ox * nRPrime * (gas2.getOx() - gas1.getOx())
                             : k_ox * nRPrime * (gas1.getOx() - gas2.getOx());
 
+  const float k_fuel = 100.0f;
+  const float fuelPrime =
+      (nRPrime < 0.f) ? -k_fuel * nRPrime * (gas2.getFuel() - gas1.getFuel())
+                      : -k_fuel * nRPrime * (gas1.getFuel() - gas2.getFuel());
+
   // Create the derived state vector [V', nR', Q', ox', fuel']
-  return std::valarray<float>{0.f, nRPrime, QPrime, oxPrime, 0.f};
+  return std::valarray<float>{0.f, nRPrime, QPrime, oxPrime, fuelPrime};
 }
