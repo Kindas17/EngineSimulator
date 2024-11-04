@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   CylinderGeometry geometry = CylinderGeometry();
   Piston piston = Piston(geometry);
   PistonGraphics pistonGraphics =
-      PistonGraphics(vector2_T{.x = 350.f, .y = 600.f}, &piston, 2000);
+      PistonGraphics(std::valarray<float>{350.f, 600.f}, &piston, 2000);
 
   // Define the loggers
   std::vector<CycleLogger> loggers = {
@@ -71,7 +71,8 @@ int main(int argc, char *argv[]) {
       CycleLogger([&piston]() { return KELVToCELS(piston.gas.getT()); }),
       CycleLogger([&piston]() { return piston.gas.getOx(); }),
       CycleLogger([&piston]() { return piston.exhaustFlow; }),
-      CycleLogger([&piston]() { return piston.gas.getFuel(); })};
+      CycleLogger([&piston]() { return piston.gas.getFuel(); }),
+      CycleLogger([&piston]() { return M3ToCC(piston.gas.getV()); })};
 
   /* Game Loop */
   while (game.isGameRunning()) {
@@ -103,14 +104,19 @@ int main(int argc, char *argv[]) {
     ImGui::NewFrame();
 
     ImGui::Begin("Test");
-    ImGui::SliderFloat("Throttle", &piston.throttle, 0.f, 1.f);
     ImGui::SliderFloat("Torque [Nm]", &piston.externalTorque, 0.f, 20.f);
+    ImGui::SliderFloat("Throttle", &piston.throttle, 0.f, 1.f);
+    ImGui::InputFloat("Combustion speed", &piston.combustionSpeed);
+    ImGui::InputFloat("Combustion energy", &piston.combustionEnergy);
     ImGui::End();
 
     ImGui::Begin("ASD 1");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("Pressure", loggers[0].getData(), loggers[0].getSize());
+    ImPlot::PlotLine("Thermodynamic Cycle",
+                     loggers[6].getData(),
+                     loggers[0].getData(),
+                     loggers[0].getSize());
     ImPlot::EndPlot();
     ImGui::End();
 

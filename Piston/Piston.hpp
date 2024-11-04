@@ -4,7 +4,6 @@
 
 #include "Gas.hpp"
 #include "Geometry.hpp"
-#include "Linalg.hpp"
 #include "Orifice.hpp"
 
 constexpr float DEGToRAD(float X) {
@@ -30,11 +29,10 @@ float chamberDisplacement(float ang, float omega, CylinderGeometry g);
 class Piston {
  public:
   Piston(CylinderGeometry geometryInfo);
-  Piston(CylinderGeometry geometryInfo, float omega0);
 
   /* Specs */
   CylinderGeometry geometry;
-  vector2_T rodFoot{};
+  std::valarray<float> rodFoot{{0.f, 0.f}};
 
   float throttle{0.f};
   float minThrottle{0.03f};
@@ -49,7 +47,7 @@ class Piston {
   bool killDynamics{false};
 
   float combustionAdvance{0.f};
-  float combustionSpeed{25000.f};
+  float combustionSpeed{100000.f};
   float combustionEnergy{1000.f};
   float kthermal{1.0f};
   float intakeTiming{45.f};

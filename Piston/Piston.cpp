@@ -28,12 +28,7 @@ static std::valarray<float> F_piston(float t,
                                      std::valarray<float> &st,
                                      float Ti,
                                      float Te) {
-  const float omega = st[1];
-
-  const float thetap = omega;
-  const float omegap = Ti + Te;
-
-  return std::valarray<float>{thetap, omegap};
+  return std::valarray<float>{st[1], Ti + Te};
 }
 
 Piston::Piston(CylinderGeometry geometryInfo)
@@ -47,42 +42,12 @@ Piston::Piston(CylinderGeometry geometryInfo)
   state = std::valarray<float>{DEGToRAD(0.f), 0.f};
 
   /* Initial update to initialize the piston status */
-  rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
-             .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
+  rodFoot =
+      std::valarray<float>{+(geometry.stroke * 0.5f) * cosf(getCurrentAngle()),
+                           -(geometry.stroke * 0.5f) * sinf(getCurrentAngle())};
 
   ignitionOn = true;
 }
-
-// Piston::Piston(CylinderGeometry geometryInfo, float omega0)
-//     : externalTorque{},
-//       combustionInProgress(false),
-//       throttle(0.f),
-//       dynamicsIsActive(false) {
-//   geometry = geometryInfo;
-
-//   /* Dynamics */
-//   state = std::valarray<float>{DEGToRAD(0.f), omega0};
-//   killDynamics = true;
-
-//   /* Initial update to initialize the piston status */
-//   rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
-//              .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
-
-//   // gas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-//   //               getChamberVolume(),
-//   //               DEFAULT_AMBIENT_TEMPERATURE,
-//   //               1.f);
-//   // intakeGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-//   //                     100.f * getChamberVolume(),
-//   //                     DEFAULT_AMBIENT_TEMPERATURE,
-//   //                     1.f);
-//   // exhaustGas = new Gas(DEFAULT_AMBIENT_PRESSURE,
-//   //                      100.f * getChamberVolume(),
-//   //                      DEFAULT_AMBIENT_TEMPERATURE,
-//   //                      1.f);
-
-//   ignitionOn = true;
-// }
 
 void Piston::update(float deltaT) {
   const float previousHeadAngle = getHeadAngle();
@@ -99,8 +64,9 @@ void Piston::update(float deltaT) {
   state[0] = angleWrapper(state[0]);
 
   /* Update rod foot position */
-  rodFoot = {.x = +(geometry.stroke * 0.5f) * cos(getCurrentAngle()),
-             .y = -(geometry.stroke * 0.5f) * sin(getCurrentAngle())};
+  rodFoot =
+      std::valarray<float>{+(geometry.stroke * 0.5f) * cosf(getCurrentAngle()),
+                           -(geometry.stroke * 0.5f) * sinf(getCurrentAngle())};
 
   // Update valve position
   ValveMgm();
@@ -117,7 +83,7 @@ void Piston::update(float deltaT) {
       std::bind(F_Gas,
                 std::placeholders::_1,
                 std::placeholders::_2,
-                +stp_int + gas.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
+                stp_int + gas.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
 
   exhaustValveOrif.setKFlow(exhaustValve * exhaustCoef);
   const auto stp1_exh = exhaustValveOrif.flowThrough();
@@ -131,16 +97,15 @@ void Piston::update(float deltaT) {
       std::bind(F_Gas,
                 std::placeholders::_1,
                 std::placeholders::_2,
-                +stp_exh + gas.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
+                stp_exh + gas.exchangeHeat(3.f, DEFAULT_AMBIENT_TEMPERATURE)));
 
-  auto stp_comb =
-      gas.combust(combustionInProgress ? combustionSpeed : 0.f, 1000.f);
+  auto stp_comb = gas.combust(
+      combustionInProgress ? combustionSpeed : 0.f, combustionEnergy);
   gas.state = RungeKutta4(
       deltaT,
       0.f,
       gas.state,
-      std::bind(
-          F_Gas, std::placeholders::_1, std::placeholders::_2, +stp_comb));
+      std::bind(F_Gas, std::placeholders::_1, std::placeholders::_2, stp_comb));
 
   // Spark plug event
   if (ignitionOn &&
@@ -178,7 +143,7 @@ void Piston::ValveMgm() {
 }
 
 float Piston::getPistonPosition() {
-  const float a = rodFoot.y;
+  const float a = rodFoot[1];
   const float b = pow(geometry.stroke * cos(getCurrentAngle()) * 0.5f, 2);
   const float c = b / pow(geometry.rod, 2);
   const float d = geometry.rod * sqrt(1 - c);

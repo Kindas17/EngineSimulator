@@ -1,14 +1,16 @@
 #include "PistonGraphics.hpp"
 
-PistonGraphics::PistonGraphics(vector2_T pos, Piston *p, int rFactor) {
+PistonGraphics::PistonGraphics(std::valarray<float> pos,
+                               Piston *p,
+                               int rFactor) {
   this->crankCenter = pos;
   this->piston = p;
   this->rescaleFactor = rFactor;
 
   /* Cylinder walls position */
   this->cilinderRectPos = pos;
-  this->cilinderRectPos.y -= rescaleFactor * p->geometry.rod +
-                             rescaleFactor * p->geometry.stroke / 2.f;
+  this->cilinderRectPos[1] -= rescaleFactor * p->geometry.rod +
+                              rescaleFactor * p->geometry.stroke / 2.f;
 
   // Load an image into a surface
   pistonSurface = IMG_Load("assets/piston.png");
@@ -23,7 +25,7 @@ PistonGraphics::PistonGraphics(vector2_T pos, Piston *p, int rFactor) {
 }
 
 float PistonGraphics::getPistonPosition() {
-  const float a = rodFoot.y;
+  const float a = rodFoot[1];
   const float b = (rescaleFactor * piston->geometry.stroke / 2.f) *
                   (rescaleFactor * piston->geometry.stroke / 2.f) *
                   cos(piston->getCurrentAngle()) *
@@ -36,26 +38,25 @@ float PistonGraphics::getPistonPosition() {
 
 void PistonGraphics::showPiston(SDL_Renderer *renderer) {
   /* Update engine geometry */
-  rodFoot = {
-      .x = crankCenter.x + (rescaleFactor * piston->geometry.stroke / 2.f) *
-                               cos(piston->getCurrentAngle()),
-      .y = crankCenter.y - (rescaleFactor * piston->geometry.stroke / 2.f) *
-                               sin(piston->getCurrentAngle())};
+  rodFoot = {crankCenter[0] + (rescaleFactor * piston->geometry.stroke / 2.f) *
+                                  cos(piston->getCurrentAngle()),
+             crankCenter[1] - (rescaleFactor * piston->geometry.stroke / 2.f) *
+                                  sin(piston->getCurrentAngle())};
 
   // Distance between piston head and connecting rod head
   const float pistonOverHead = 40.f;
-  pistonPos = {.x = crankCenter.x, .y = getPistonPosition()};
+  pistonPos = std::valarray<float>{crankCenter[0], getPistonPosition()};
 
   /* Combustion */
   if (piston->ignitionOn) {
     SDL_Rect combustion;
     combustion.x =
-        cilinderRectPos.x - rescaleFactor * piston->geometry.bore / 2.f;
-    combustion.y = cilinderRectPos.y -
-                   piston->geometry.addStroke * rescaleFactor + 2.f -
-                   pistonOverHead;
+        cilinderRectPos[0] - rescaleFactor * piston->geometry.bore / 2.f;
+    combustion.y = cilinderRectPos[1] -
+                    piston->geometry.addStroke * rescaleFactor + 2.f -
+                    pistonOverHead;
     combustion.w = rescaleFactor * piston->geometry.bore;
-    combustion.h = -combustion.y + pistonPos.y;
+    combustion.h = -combustion.y + pistonPos[1];
     SDL_SetRenderDrawColor(renderer, 64, 32, 0, 0);
     if (piston->getHeadAngle() >=
         std::numbers::pi - DEGToRAD(piston->combustionAdvance)) {
@@ -66,14 +67,15 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
   /* Draw the crankshaft */
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
   SDL_RenderDrawLine(
-      renderer, crankCenter.x, crankCenter.y, rodFoot.x, rodFoot.y);
+      renderer, crankCenter[0], crankCenter[1], rodFoot[0], rodFoot[1]);
   SDL_SetRenderDrawColor(renderer, 64, 64, 64, 0);
 
   /* Draw the cylinder */
   SDL_Rect cylinder;
   SDL_Rect addStroke;
-  cylinder.x = cilinderRectPos.x - rescaleFactor * piston->geometry.bore / 2.f;
-  cylinder.y = cilinderRectPos.y - pistonOverHead;
+  cylinder.x =
+      cilinderRectPos[0] - rescaleFactor * piston->geometry.bore / 2.f;
+  cylinder.y = cilinderRectPos[1] - pistonOverHead;
   cylinder.h = rescaleFactor * piston->geometry.stroke + pistonOverHead;
   cylinder.w = rescaleFactor * piston->geometry.bore;
   addStroke.x = cylinder.x;
@@ -87,15 +89,15 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
   // SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
 
   // // Rod
-  // SDL_RenderDrawLine(renderer, rodFoot.x, rodFoot.y, pistonPos.x,
-  // pistonPos.y);
+  // SDL_RenderDrawLine(renderer, rodFoot[0], rodFoot[1], pistonPos[0],
+  // pistonPos[1]);
 
   // Piston
   SDL_RenderDrawLine(renderer,
-                     pistonPos.x - rescaleFactor * piston->geometry.bore / 2.f,
-                     pistonPos.y - pistonOverHead,
-                     pistonPos.x + rescaleFactor * piston->geometry.bore / 2.f,
-                     pistonPos.y - pistonOverHead);
+                     pistonPos[0] - rescaleFactor * piston->geometry.bore / 2.f,
+                     pistonPos[1] - pistonOverHead,
+                     pistonPos[0] + rescaleFactor * piston->geometry.bore / 2.f,
+                     pistonPos[1] - pistonOverHead);
 
   // Convert surface to texture
   SDL_Texture *pistonTexture =
@@ -113,16 +115,16 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
 
   // Piston Texture
   SDL_Rect destRect;
-  destRect.x = pistonPos.x - rescaleFactor * piston->geometry.bore / 2.f;
-  destRect.y = pistonPos.y - pistonOverHead;
+  destRect.x = pistonPos[0] - rescaleFactor * piston->geometry.bore / 2.f;
+  destRect.y = pistonPos[1] - pistonOverHead;
   destRect.w = rescaleFactor * piston->geometry.bore;
   destRect.h = rescaleFactor * piston->geometry.bore * 0.7f;
   SDL_RenderCopy(renderer, pistonTexture, nullptr, &destRect);
 
   // Rod Texture
   const float rodScaleFactor = 1.6f;
-  destRect.x = rodFoot.x - 25 * rodScaleFactor;
-  destRect.y = rodFoot.y - 60 * rodScaleFactor;
+  destRect.x = rodFoot[0] - 25 * rodScaleFactor;
+  destRect.y = rodFoot[1] - 60 * rodScaleFactor;
   destRect.w = 50 * rodScaleFactor;
   destRect.h = 80 * rodScaleFactor;
   SDL_Point center = {(int)(25 * rodScaleFactor), (int)(60 * rodScaleFactor)};

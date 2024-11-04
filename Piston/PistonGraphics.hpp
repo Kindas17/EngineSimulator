@@ -4,22 +4,21 @@
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 
-#include "Linalg.hpp"
 #include "Piston.hpp"
 
 class PistonGraphics {
  public:
-  PistonGraphics(vector2_T pos, Piston *p, int rescaleFactor);
+  PistonGraphics(std::valarray<float> pos, Piston *p, int rescaleFactor);
   void showPiston(SDL_Renderer *renderer);
   float getPistonPosition();
 
   Piston *piston;
 
   /* GGeometry */
-  vector2_T crankCenter;
-  vector2_T rodFoot;
-  vector2_T pistonPos;
-  vector2_T cilinderRectPos;
+  std::valarray<float> crankCenter;
+  std::valarray<float> rodFoot;
+  std::valarray<float> pistonPos;
+  std::valarray<float> cilinderRectPos;
 
   SDL_Surface *pistonSurface;
   SDL_Surface *rodSurface;

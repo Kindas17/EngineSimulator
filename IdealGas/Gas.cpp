@@ -23,7 +23,7 @@ Gas::Gas(float p, float v, float t, float o) : IdealGas(p, v, t) {
 std::valarray<float> Gas::combust(float kcs, float kce) {
   float oxPrime = -kcs * state[2] * state[4];
   float fuelPrime = -100.f * state[5];
-  float QPrime = -fuelPrime * kce * 100000.f;
+  float QPrime = -fuelPrime * kce * kcs;
   return std::valarray<float>{0.f, 0.f, QPrime, oxPrime, fuelPrime};
 }
 
