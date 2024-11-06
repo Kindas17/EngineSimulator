@@ -3,8 +3,6 @@
 #include <cmath>
 #include <iostream>
 
-#include "Geometry.hpp"
-
 using namespace std::numbers;
 
 constexpr float AIR_GAMMA = 1.4f;

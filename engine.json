@@ -1,0 +1,25 @@
+{
+    "geometry": {
+        "cylinder": {
+            "stroke": 50,
+            "bore": 50.6,
+            "add_stroke": 5
+        },
+        "rod": {
+            "length": 55
+        },
+        "crankshaft": {
+            "weight": 15
+        }
+    },
+    "valves": {
+        "intake": {
+            "timing": 45,
+            "shape": 40
+        },
+        "exhaust": {
+            "timing": 300,
+            "shape": 40
+        }
+    }
+}

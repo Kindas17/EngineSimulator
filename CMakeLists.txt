@@ -23,11 +23,13 @@ find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
 find_package(imgui REQUIRED)
 find_package(implot REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 add_subdirectory(Piston)
 add_subdirectory(Logger)
 add_subdirectory(IdealGas)
 add_subdirectory(Solver)
+add_subdirectory(EngineConfig)
 
 target_link_libraries(
   tutorial
@@ -35,7 +37,7 @@ target_link_libraries(
           Logger
           IdealGas
           Solver
-          Geometry
+          EngineConfig
           imgui::imgui
           SDL2::SDL2
           SDL2::SDL2main
@@ -49,7 +51,7 @@ target_link_libraries(
           Logger
           IdealGas
           Solver
-          Geometry
+          EngineConfig
           imgui::imgui
           SDL2::SDL2
           SDL2::SDL2main

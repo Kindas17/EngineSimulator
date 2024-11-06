@@ -3,8 +3,6 @@
 
 #include <valarray>
 
-#include "Geometry.hpp"
-
 constexpr float IDEALGAS_ALPHA = 5.f / 2.f;
 constexpr float IDEAL_GAS_CONSTANT = 8.314f;
 // Approx molar mass of air in kg/mol
@@ -40,7 +38,8 @@ class IdealGas {
     return state[3];
   }
 
-  IdealGas() {}
+  IdealGas() {
+  }
   IdealGas(float p, float v, float t);
 
   std::valarray<float> exchangeHeat(float kTherm, float extTemp);

@@ -59,7 +59,13 @@ int main(int argc, char *argv[]) {
   }
 
   // Define the engine
-  Piston piston = Piston(CylinderGeometry());
+  EngineConfig cfg;
+  if (!cfg.loadFromFile("engine.json")) {
+    std::cerr << "Game OVER!" << std::endl;
+    return 0;
+  };
+  cfg.evaluate();
+  Piston piston = Piston(cfg);
   PistonGraphics pistonGraphics =
       PistonGraphics(std::valarray<float>{350.f, 600.f}, &piston, 2000);
 
@@ -85,13 +91,13 @@ int main(int argc, char *argv[]) {
       for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
         piston.update(deltaT);
 
-        for (size_t i = 0; i < loggers.size(); i++) {
-          loggers[i].addSample();
+        for (auto &logger : loggers) {
+          logger.addSample();
         }
 
         if (piston.cycleTrigger) {
-          for (size_t i = 0; i < loggers.size(); i++) {
-            loggers[i].trig();
+          for (auto &logger : loggers) {
+            logger.trig();
           }
           piston.cycleTrigger = false;
         }

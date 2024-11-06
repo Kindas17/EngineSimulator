@@ -2,8 +2,8 @@
 #define PISTON_HPP
 #include <numbers>
 
+#include "EngineConfig.hpp"
 #include "Gas.hpp"
-#include "Geometry.hpp"
 #include "Orifice.hpp"
 
 constexpr float DEGToRAD(float X) {
@@ -27,10 +27,12 @@ constexpr float RPMToRADS(float X) {
 
 class Piston {
  public:
-  Piston(CylinderGeometry geometryInfo);
+  // Piston(CylinderGeometry geometryInfo);
+  Piston(EngineConfig cfg);
 
   /* Specs */
-  CylinderGeometry geometry;
+  // CylinderGeometry geometry;
+  EngineConfig cfg;
   std::valarray<float> rodFoot{{0.f, 0.f}};
 
   float throttle{0.f};
@@ -49,10 +51,6 @@ class Piston {
   float combustionSpeed{100000.f};
   float combustionEnergy{1000.f};
   float kthermal{1.0f};
-  float intakeTiming{45.f};
-  float exhaustTiming{300.f};
-  float intakeShape{40.f};
-  float exhaustShape{40.f};
 
   /* Generic Methods */
   float getPistonPosition();
