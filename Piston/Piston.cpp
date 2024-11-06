@@ -35,11 +35,24 @@ Piston::Piston(CylinderGeometry geometryInfo)
     : externalTorque{},
       combustionInProgress(false),
       throttle(0.f),
-      dynamicsIsActive(false) {
+      dynamicsIsActive(false),
+      intakeValveOrif(Orifice(0.f, gas, intakeManifold)),
+      exhaustValveOrif(Orifice(0.f, gas, exhaustPipe)) {
   geometry = geometryInfo;
 
   /* Dynamics */
   state = std::valarray<float>{DEGToRAD(0.f), 0.f};
+
+  /* Thermodynamics */
+  gas = Gas(DEFAULT_AMBIENT_PRESSURE,
+            getChamberVolume(),
+            DEFAULT_AMBIENT_TEMPERATURE,
+            0.f);
+  intakeManifold =
+      Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 1.f);
+
+  exhaustPipe =
+      Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 0.f);
 
   /* Initial update to initialize the piston status */
   rodFoot =

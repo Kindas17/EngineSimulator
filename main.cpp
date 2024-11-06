@@ -59,8 +59,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Define the engine
-  CylinderGeometry geometry = CylinderGeometry();
-  Piston piston = Piston(geometry);
+  Piston piston = Piston(CylinderGeometry());
   PistonGraphics pistonGraphics =
       PistonGraphics(std::valarray<float>{350.f, 600.f}, &piston, 2000);
 

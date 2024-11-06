@@ -13,6 +13,7 @@ class Gas : public IdealGas {
   float fuelPrime;
   float fuelInjected;
 
+  Gas(){}
   Gas(float p, float v, float t, float o);
 
   std::valarray<float> combust(float kcs, float kce);

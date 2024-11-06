@@ -14,6 +14,7 @@ bool Game::isGameRunning() {
 void Game::handleEvents() {
   SDL_Event event;
   SDL_PollEvent(&event);
+  ImGui_ImplSDL2_ProcessEvent(&event);
 
   switch (event.type) {
     case SDL_QUIT:
@@ -23,8 +24,6 @@ void Game::handleEvents() {
     default:
       break;
   }
-
-  ImGui_ImplSDL2_ProcessEvent(&event);
 }
 
 void Game::RenderClear() {

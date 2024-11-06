@@ -40,6 +40,7 @@ class IdealGas {
     return state[3];
   }
 
+  IdealGas() {}
   IdealGas(float p, float v, float t);
 
   std::valarray<float> exchangeHeat(float kTherm, float extTemp);

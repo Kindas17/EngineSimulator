@@ -24,7 +24,6 @@ constexpr float RPMToHz(float X) {
 constexpr float RPMToRADS(float X) {
   return 2.f * std::numbers::pi * RPMToHz(X);
 }
-float chamberDisplacement(float ang, float omega, CylinderGeometry g);
 
 class Piston {
  public:
@@ -40,13 +39,13 @@ class Piston {
   float totalFuelConsumption{0.f};
 
   /* Dynamics */
-  bool ignitionOn;
+  bool ignitionOn{false};
   void update(float deltaT);
   void ValveMgm();
-  float externalTorque;
+  float externalTorque{};
   bool killDynamics{false};
 
-  float combustionAdvance{0.f};
+  float combustionAdvance{};
   float combustionSpeed{100000.f};
   float combustionEnergy{1000.f};
   float kthermal{1.0f};
@@ -73,8 +72,8 @@ class Piston {
   void setEngineSpeed(float omega);
 
   /* Valves */
-  float intakeValve;
-  float exhaustValve;
+  float intakeValve{};
+  float exhaustValve{};
   float intakeFlow{};
   float exhaustFlow{};
   float leakageFlow{};
@@ -82,18 +81,11 @@ class Piston {
   float exhaustCoef{0.002f};
 
   /* Thermodynamics */
-  Gas gas{Gas(DEFAULT_AMBIENT_PRESSURE,
-              getChamberVolume(),
-              DEFAULT_AMBIENT_TEMPERATURE,
-              0.f)};
-  Gas intakeManifold{
-      Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 1.f)};
-
-  Gas exhaustPipe{
-      Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 0.f)};
-
-  Orifice intakeValveOrif{Orifice(0.f, gas, intakeManifold)};
-  Orifice exhaustValveOrif{Orifice(0.f, gas, exhaustPipe)};
+  Gas gas;
+  Gas intakeManifold;
+  Gas exhaustPipe;
+  Orifice intakeValveOrif;
+  Orifice exhaustValveOrif;
 
   bool combustionInProgress;
 
