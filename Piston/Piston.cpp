@@ -34,10 +34,11 @@ static std::valarray<float> F_piston(float t,
 Piston::Piston(EngineConfig engineCfg)
     : cfg(engineCfg),
       combustionInProgress(false),
-      throttle(0.f),
       dynamicsIsActive(false),
       intakeValveOrif(Orifice(0.f, gas, intakeManifold)),
-      exhaustValveOrif(Orifice(0.f, gas, exhaustPipe)) {
+      exhaustValveOrif(Orifice(0.f, gas, exhaustPipe)),
+      IntakeManifoldOrif(Orifice(0.f, intakeManifold, externalAir)),
+      ExhaustPipeOrif(Orifice(0.f, exhaustPipe, externalAir)) {
   /* Dynamics */
   state = std::valarray<float>{DEGToRAD(0.f), 0.f};
 
@@ -46,11 +47,18 @@ Piston::Piston(EngineConfig engineCfg)
             getChamberVolume(),
             DEFAULT_AMBIENT_TEMPERATURE,
             0.f);
-  intakeManifold =
-      Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 1.f);
+  intakeManifold = Gas(DEFAULT_AMBIENT_PRESSURE,
+                       5 * getChamberVolume(),
+                       DEFAULT_AMBIENT_TEMPERATURE,
+                       1.f);
 
-  exhaustPipe =
-      Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 0.f);
+  exhaustPipe = Gas(DEFAULT_AMBIENT_PRESSURE,
+                    5 * getChamberVolume(),
+                    DEFAULT_AMBIENT_TEMPERATURE,
+                    1.f);
+
+  externalAir =
+      Gas(DEFAULT_AMBIENT_PRESSURE, 1000.f, DEFAULT_AMBIENT_TEMPERATURE, 1.f);
 
   /* Initial update to initialize the piston status */
   rodFoot = std::valarray<float>{
@@ -81,41 +89,51 @@ void Piston::update(float deltaT) {
   // Update valve position
   ValveMgm();
 
-  intakeValveOrif.setKFlow(getThrottle(throttle) * intakeValve * intakeCoef);
-  const auto stp1_int = intakeValveOrif.flowThrough();
-  const auto stp2_int = chamberDisplacement();
-  const auto stp_int = stp1_int + stp2_int;
+  /* Thermodynamics */
+  intakeValveOrif.setKFlow(getThrottle(throttle) * intakeValve *
+                           cfg.intakeValve.kFlow);
+  exhaustValveOrif.setKFlow(exhaustValve * cfg.exhaustValve.kFlow);
+  IntakeManifoldOrif.setKFlow(0.005f);
+  ExhaustPipeOrif.setKFlow(0.005f);
+
+  // [V', nR', Q', ox', fuel']
+  const std::valarray<float> stp_int =
+      intakeValveOrif.flowThrough() + chamberDisplacement();
+  const std::valarray<float> stp_exh =
+      exhaustValveOrif.flowThrough() + chamberDisplacement();
+  const std::valarray<float> stp_comb = gas.combust(
+      combustionInProgress ? cfg.combustion.speed : 0.f, cfg.combustion.energy);
+  const std::valarray<float> stp_man = IntakeManifoldOrif.flowThrough();
+  const std::valarray<float> stp_pip = ExhaustPipeOrif.flowThrough();
+
   intakeFlow = stp_int[1];
-  gas.state = RungeKutta4(
-      deltaT,
-      0.f,
-      gas.state,
-      std::bind(F_Gas,
-                std::placeholders::_1,
-                std::placeholders::_2,
-                stp_int + gas.exchangeHeat(1.f, DEFAULT_AMBIENT_TEMPERATURE)));
-
-  exhaustValveOrif.setKFlow(exhaustValve * exhaustCoef);
-  const auto stp1_exh = exhaustValveOrif.flowThrough();
-  const auto stp2_exh = chamberDisplacement();
-  const auto stp_exh = stp1_exh + stp2_exh;
   exhaustFlow = stp_exh[1];
-  gas.state = RungeKutta4(
-      deltaT,
-      0.f,
-      gas.state,
-      std::bind(F_Gas,
-                std::placeholders::_1,
-                std::placeholders::_2,
-                stp_exh + gas.exchangeHeat(3.f, DEFAULT_AMBIENT_TEMPERATURE)));
 
-  auto stp_comb = gas.combust(
-      combustionInProgress ? combustionSpeed : 0.f, combustionEnergy);
-  gas.state = RungeKutta4(
-      deltaT,
-      0.f,
-      gas.state,
-      std::bind(F_Gas, std::placeholders::_1, std::placeholders::_2, stp_comb));
+  gas.state = RungeKutta4(deltaT,
+                          0.f,
+                          gas.state,
+                          std::bind(F_Gas,
+                                    std::placeholders::_1,
+                                    std::placeholders::_2,
+                                    stp_int + stp_exh + stp_comb));
+
+  intakeManifold.state =
+      RungeKutta4(deltaT,
+                  0.f,
+                  intakeManifold.state,
+                  std::bind(F_Gas,
+                            std::placeholders::_1,
+                            std::placeholders::_2,
+                            stp_man - intakeValveOrif.flowThrough()));
+
+  exhaustPipe.state =
+      RungeKutta4(deltaT,
+                  0.f,
+                  exhaustPipe.state,
+                  std::bind(F_Gas,
+                            std::placeholders::_1,
+                            std::placeholders::_2,
+                            stp_pip - exhaustValveOrif.flowThrough()));
 
   // Spark plug event
   if (ignitionOn &&

@@ -9,17 +9,23 @@
             "length": 55
         },
         "crankshaft": {
-            "weight": 15
+            "weight": 40
         }
     },
     "valves": {
         "intake": {
-            "timing": 45,
-            "shape": 40
+            "timing": 55,
+            "shape": 30,
+            "kFlow": 0.024
         },
         "exhaust": {
-            "timing": 300,
-            "shape": 40
+            "timing": 310,
+            "shape": 30,
+            "kFlow": 0.016
         }
+    },
+    "Combustion": {
+        "speed": 2000,
+        "energy": 75000000
     }
 }

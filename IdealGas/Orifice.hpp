@@ -13,6 +13,8 @@ class Orifice {
     k_flow = new_k_flow;
   }
 
+  float totalFlow{};
+
  private:
   float k_flow{0};
   Gas &gas1;

@@ -21,6 +21,8 @@ constexpr float getTimeStep_s(int mult, float frametime) {
 
 constexpr int SIMULATION_MULTIPLIER = 200;
 constexpr float FRAMETIME = 16.f; /* ms */
+constexpr float SIMULATION_FREQUENCY =
+    SIMULATION_MULTIPLIER * 1000.f / FRAMETIME;
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
 
 constexpr float simulationFrequency() {
@@ -77,7 +79,15 @@ int main(int argc, char *argv[]) {
       CycleLogger([&piston]() { return piston.gas.getOx(); }),
       CycleLogger([&piston]() { return piston.exhaustFlow; }),
       CycleLogger([&piston]() { return piston.gas.getFuel(); }),
-      CycleLogger([&piston]() { return M3ToCC(piston.gas.getV()); })};
+      CycleLogger([&piston]() { return M3ToCC(piston.gas.getV()); }),
+      CycleLogger(
+          [&piston]() { return PAToATM(piston.intakeManifold.getP()); }),
+      CycleLogger([&piston]() { return PAToATM(piston.exhaustPipe.getP()); }),
+      CycleLogger([&piston]() { return piston.intakeManifold.getOx(); }),
+      CycleLogger([&piston]() { return piston.exhaustPipe.getOx(); }),
+  };
+
+  float t = 0.f;
 
   /* Game Loop */
   while (game.isGameRunning()) {
@@ -111,8 +121,8 @@ int main(int argc, char *argv[]) {
     ImGui::Begin("Test");
     ImGui::SliderFloat("Torque [Nm]", &piston.externalTorque, 0.f, 20.f);
     ImGui::SliderFloat("Throttle", &piston.throttle, 0.f, 1.f);
-    ImGui::InputFloat("Combustion speed", &piston.combustionSpeed);
-    ImGui::InputFloat("Combustion energy", &piston.combustionEnergy);
+    ImGui::InputFloat("Combustion speed", &piston.cfg.combustion.speed);
+    ImGui::InputFloat("Combustion energy", &piston.cfg.combustion.energy);
     ImGui::End();
 
     ImGui::Begin("ASD 1");
@@ -137,22 +147,26 @@ int main(int argc, char *argv[]) {
     ImGui::Begin("ASD 3");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("Temperature", loggers[2].getData(), loggers[2].getSize());
+    ImPlot::PlotLine("Chm Ox", loggers[3].getData(), loggers[3].getSize());
+    ImPlot::PlotLine("Int Ox", loggers[9].getData(), loggers[9].getSize());
+    ImPlot::PlotLine("Exh Ox", loggers[10].getData(), loggers[10].getSize());
     ImPlot::EndPlot();
     ImGui::End();
 
     ImGui::Begin("ASD 4");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("O2", loggers[3].getData(), loggers[3].getSize());
-    ImPlot::PlotLine("Fuel", loggers[5].getData(), loggers[5].getSize());
+    ImPlot::PlotLine(
+        "Intake Pressure", loggers[7].getData(), loggers[7].getSize());
+    ImPlot::PlotLine(
+        "Exhaust Pressure", loggers[8].getData(), loggers[8].getSize());
     ImPlot::EndPlot();
     ImGui::End();
 
     ImGui::Begin("Test8");
     ImGui::Text("Time:       %.1f s", 0.001f * gameLoopCnt * FRAMETIME);
     ImGui::Text("Framerate:  %.0f Hz", 1000.f / FRAMETIME);
-    ImGui::Text("Simulation: %.0f Hz", simulationFrequency());
+    ImGui::Text("Simulation: %.0f Hz", SIMULATION_FREQUENCY);
     ImGui::Text("Engine Speed:  %.0f rpm", RADSToRPM(piston.getEngineSpeed()));
     ImGui::Text("CPU Load:     %.0f / 100", 100 * cpuLoad);
     ImGui::Checkbox("Start", &start);
@@ -167,17 +181,18 @@ int main(int argc, char *argv[]) {
 
     pistonGraphics.showPiston(game.renderer);
 
-    /* Wait for next frame */
-    const auto timeEnd = high_resolution_clock::now();
-    const auto deltaTime =
-        duration_cast<microseconds>(timeEnd - timeStart).count();
-    const auto delay = FRAMETIME - (deltaTime / 1000);
-    cpuLoad = 0.99f * cpuLoad + 0.01f * deltaTime / (FRAMETIME * 1000);
-    std::this_thread::sleep_for(std::chrono::microseconds(
-        static_cast<int>(FRAMETIME * 1000) - deltaTime));
-
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
     game.RenderPresent();
+
+    /* Wait for next frame */
+    const auto deltaTime =
+        duration_cast<microseconds>(high_resolution_clock::now() - timeStart)
+            .count();
+    const auto delay = FRAMETIME - (deltaTime / 1000);
+    cpuLoad = 0.99f * cpuLoad + 0.01f * deltaTime / (FRAMETIME * 1000);
+
+    std::this_thread::sleep_for(std::chrono::microseconds(
+        static_cast<int>(FRAMETIME * 1000) - deltaTime));
   }
 
   ImGui_ImplSDLRenderer2_Shutdown();

@@ -33,12 +33,19 @@ bool EngineConfig::loadFromFile(const std::string& filename) {
         .timing =
             jsonConfig.at("valves").at("intake").at("timing").get<float>(),
         .shape = jsonConfig.at("valves").at("intake").at("shape").get<float>(),
+        .kFlow = jsonConfig.at("valves").at("intake").at("kFlow").get<float>(),
     };
 
     exhaustValve = {
         .timing =
             jsonConfig.at("valves").at("exhaust").at("timing").get<float>(),
         .shape = jsonConfig.at("valves").at("exhaust").at("shape").get<float>(),
+        .kFlow = jsonConfig.at("valves").at("exhaust").at("kFlow").get<float>(),
+    };
+
+    combustion = {
+        .speed = jsonConfig.at("Combustion").at("speed").get<float>(),
+        .energy = jsonConfig.at("Combustion").at("energy").get<float>(),
     };
 
   } catch (const nlohmann::json::exception& e) {

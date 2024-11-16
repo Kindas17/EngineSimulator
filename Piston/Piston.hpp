@@ -48,8 +48,6 @@ class Piston {
   bool killDynamics{false};
 
   float combustionAdvance{};
-  float combustionSpeed{100000.f};
-  float combustionEnergy{1000.f};
   float kthermal{1.0f};
 
   /* Generic Methods */
@@ -75,15 +73,16 @@ class Piston {
   float intakeFlow{};
   float exhaustFlow{};
   float leakageFlow{};
-  float intakeCoef{0.003f};
-  float exhaustCoef{0.002f};
 
   /* Thermodynamics */
   Gas gas;
   Gas intakeManifold;
   Gas exhaustPipe;
+  Gas externalAir;
   Orifice intakeValveOrif;
   Orifice exhaustValveOrif;
+  Orifice IntakeManifoldOrif;
+  Orifice ExhaustPipeOrif;
 
   bool combustionInProgress;
 

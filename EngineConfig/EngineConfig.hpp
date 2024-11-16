@@ -30,6 +30,12 @@ struct Crankshaft {
 struct Valve {
   float timing;
   float shape;
+  float kFlow;
+};
+
+struct Combustion {
+  float speed;
+  float energy;
 };
 
 class EngineConfig {
@@ -39,6 +45,7 @@ class EngineConfig {
   Crankshaft crankshaft;
   Valve intakeValve;
   Valve exhaustValve;
+  Combustion combustion;
 
   float momentOfInertia;
 

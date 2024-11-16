@@ -14,6 +14,8 @@ std::valarray<float> Orifice::flowThrough() {
                     : +gasFlowFunction(
                           gas2.getP(), gas1.getP(), gas2.getT(), gas1.getT()));
 
+  totalFlow = nRPrime;
+
   // Consider the heat exchange given the flow
   const float QPrime =
       IDEALGAS_ALPHA * nRPrime * ((nRPrime > 0.f) ? gas2.getT() : gas1.getT());
@@ -22,14 +24,13 @@ std::valarray<float> Orifice::flowThrough() {
 
   // Oxygenation
   const float k_ox = 50.f;
-  const float oxPrime = (nRPrime > 0.f)
-                            ? k_ox * nRPrime * (gas2.getOx() - gas1.getOx())
-                            : k_ox * nRPrime * (gas1.getOx() - gas2.getOx());
+  const float oxPrime =
+      (nRPrime > 0.f) ? k_ox * nRPrime * (gas2.getOx() - gas1.getOx()) : 0.f;
 
   const float k_fuel = 100.0f;
   const float fuelPrime =
       (nRPrime < 0.f) ? -k_fuel * nRPrime * (gas2.getFuel() - gas1.getFuel())
-                      : -k_fuel * nRPrime * (gas1.getFuel() - gas2.getFuel());
+                      : 0.f;
 
   // Create the derived state vector [V', nR', Q', ox', fuel']
   return std::valarray<float>{0.f, nRPrime, QPrime, oxPrime, fuelPrime};
