@@ -5,6 +5,7 @@
 #include <iostream>
 #include <numeric>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include "FrameRVis.hpp"
@@ -95,19 +96,36 @@ int main(int argc, char *argv[]) {
       PistonGraphics(std::valarray<float>{350.f, 600.f}, &piston, 2000);
 
   // Define the loggers
-  std::vector<CycleLogger> loggers = {
-      CycleLogger([&piston]() { return PAToATM(piston.gas.getP()); }),
-      CycleLogger([&piston]() { return piston.intakeFlow; }),
-      CycleLogger([&piston]() { return KELVToCELS(piston.gas.getT()); }),
-      CycleLogger([&piston]() { return piston.gas.getOx(); }),
-      CycleLogger([&piston]() { return piston.exhaustFlow; }),
-      CycleLogger([&piston]() { return piston.gas.getFuel(); }),
-      CycleLogger([&piston]() { return M3ToCC(piston.gas.getV()); }),
-      CycleLogger(
-          [&piston]() { return PAToATM(piston.intakeManifold.getP()); }),
-      CycleLogger([&piston]() { return PAToATM(piston.exhaustPipe.getP()); }),
-      CycleLogger([&piston]() { return piston.intakeManifold.getOx(); }),
-      CycleLogger([&piston]() { return piston.exhaustPipe.getOx(); }),
+  std::unordered_map<std::string, CycleLogger> loggers = {
+      {"PistonP",
+       CycleLogger([&piston]() { return PAToATM(piston.gas.getP()); })},
+
+      {"IntakeFlow", CycleLogger([&piston]() { return piston.intakeFlow; })},
+
+      {"PistonT",
+       CycleLogger([&piston]() { return KELVToCELS(piston.gas.getT()); })},
+
+      {"PistonOx", CycleLogger([&piston]() { return piston.gas.getOx(); })},
+
+      {"ExhaustFlow", CycleLogger([&piston]() { return piston.exhaustFlow; })},
+
+      {"Fuel", CycleLogger([&piston]() { return piston.gas.getFuel(); })},
+
+      {"PistonV",
+       CycleLogger([&piston]() { return M3ToCC(piston.gas.getV()); })},
+
+      {"IntakeP", CycleLogger([&piston]() {
+         return PAToATM(piston.intakeManifold.getP());
+       })},
+
+      {"ExhaustP",
+       CycleLogger([&piston]() { return PAToATM(piston.exhaustPipe.getP()); })},
+
+      {"IntakeOx",
+       CycleLogger([&piston]() { return piston.intakeManifold.getOx(); })},
+
+      {"ExhaustOx",
+       CycleLogger([&piston]() { return piston.exhaustPipe.getOx(); })},
   };
 
   /* Game Loop */
@@ -132,12 +150,12 @@ int main(int argc, char *argv[]) {
         }
 
         for (auto &logger : loggers) {
-          logger.addSample();
+          logger.second.addSample();
         }
 
         if (piston.cycleTrigger) {
           for (auto &logger : loggers) {
-            logger.trig();
+            logger.second.trig();
           }
           piston.cycleTrigger = false;
         }
@@ -159,37 +177,48 @@ int main(int argc, char *argv[]) {
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
     ImPlot::PlotLine("Thermodynamic Cycle",
-                     loggers[6].getData(),
-                     loggers[0].getData(),
-                     loggers[0].getSize());
+                     loggers.at("PistonV").getData(),
+                     loggers.at("PistonP").getData(),
+                     loggers.at("PistonP").getSize());
     ImPlot::EndPlot();
     ImGui::End();
 
     ImGui::Begin("ASD 2");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("Intake flow", loggers[1].getData(), loggers[1].getSize());
-    ImPlot::PlotLine(
-        "Exhaust flow", loggers[4].getData(), loggers[4].getSize());
+    ImPlot::PlotLine("Intake flow",
+                     loggers.at("IntakeFlow").getData(),
+                     loggers.at("IntakeFlow").getSize());
+    ImPlot::PlotLine("Exhaust flow",
+                     loggers.at("ExhaustFlow").getData(),
+                     loggers.at("ExhaustFlow").getSize());
     ImPlot::EndPlot();
     ImGui::End();
 
     ImGui::Begin("ASD 3");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("Chm Ox", loggers[3].getData(), loggers[3].getSize());
-    ImPlot::PlotLine("Int Ox", loggers[9].getData(), loggers[9].getSize());
-    ImPlot::PlotLine("Exh Ox", loggers[10].getData(), loggers[10].getSize());
+    ImPlot::PlotLine("Chm Ox",
+                     loggers.at("PistonOx").getData(),
+                     loggers.at("PistonOx").getSize());
+    ImPlot::PlotLine("Int Ox",
+                     loggers.at("IntakeOx").getData(),
+                     loggers.at("IntakeOx").getSize());
+    ImPlot::PlotLine("Exh Ox",
+                     loggers.at("ExhaustOx").getData(),
+                     loggers.at("ExhaustOx").getSize());
     ImPlot::EndPlot();
     ImGui::End();
 
     ImGui::Begin("ASD 4");
     ImPlot::SetNextAxesToFit();
     ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine(
-        "Intake Pressure", loggers[7].getData(), loggers[7].getSize());
-    ImPlot::PlotLine(
-        "Exhaust Pressure", loggers[8].getData(), loggers[8].getSize());
+    ImPlot::PlotLine("Intake Pressure",
+                     loggers.at("IntakeP").getData(),
+                     loggers.at("IntakeP").getSize());
+    ImPlot::PlotLine("Exhaust Pressure",
+                     loggers.at("ExhaustP").getData(),
+                     loggers.at("ExhaustP").getSize());
     ImPlot::EndPlot();
     ImGui::End();
 
