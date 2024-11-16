@@ -19,19 +19,42 @@ constexpr float getTimeStep_s(int mult, float frametime) {
   return frametime / (1000.f * mult);
 }
 
-constexpr int SIMULATION_MULTIPLIER = 200;
+constexpr int AUDIO_FREQ = 44100;
+constexpr int SIMULATION_MULTIPLIER = 117;
 constexpr float FRAMETIME = 16.f; /* ms */
+constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
 constexpr float SIMULATION_FREQUENCY =
     SIMULATION_MULTIPLIER * 1000.f / FRAMETIME;
-constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
+constexpr size_t AUDIO_SAMPLES =
+    SIMULATION_MULTIPLIER * AUDIO_FREQ / SIMULATION_FREQUENCY;
+constexpr size_t CIRCULAR_BUFFER_SIZE = AUDIO_SAMPLES * 5;
+constexpr size_t RESAMPLING_FACTOR = AUDIO_SAMPLES / SIMULATION_MULTIPLIER;
 
-constexpr float simulationFrequency() {
-  return SIMULATION_MULTIPLIER * 1000.f / FRAMETIME;
-}
+constexpr size_t overhead = 0;
+std::vector<float> resampledData(AUDIO_SAMPLES + overhead);
 
 float cpuLoad = 0.f;
 
 int main(int argc, char *argv[]) {
+  SDL_Init(SDL_INIT_AUDIO);
+
+  SDL_AudioSpec desiredSpec;
+  SDL_zero(desiredSpec);
+  desiredSpec.freq = AUDIO_FREQ;
+  desiredSpec.format = AUDIO_F32SYS;
+  desiredSpec.channels = 1;
+  desiredSpec.samples = AUDIO_SAMPLES;
+
+  // Open the audio device in non-callback mode (using queue).
+  if (SDL_OpenAudio(&desiredSpec, nullptr) < 0) {
+    std::cerr << "Failed to open audio: " << SDL_GetError() << std::endl;
+    SDL_Quit();
+    return 1;
+  }
+
+  // Start audio playback.
+  SDL_PauseAudio(0);
+
   bool start = false;
   size_t gameLoopCnt = 0;
 
@@ -87,8 +110,6 @@ int main(int argc, char *argv[]) {
       CycleLogger([&piston]() { return piston.exhaustPipe.getOx(); }),
   };
 
-  float t = 0.f;
-
   /* Game Loop */
   while (game.isGameRunning()) {
     const auto timeStart = high_resolution_clock::now();
@@ -100,6 +121,15 @@ int main(int argc, char *argv[]) {
       // Simulation
       for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
         piston.update(deltaT);
+
+        // Audio resampling
+        const auto rem = AUDIO_SAMPLES -
+                         RESAMPLING_FACTOR * SIMULATION_MULTIPLIER + overhead;
+        for (size_t j = 0; j < RESAMPLING_FACTOR + rem; ++j) {
+          resampledData[RESAMPLING_FACTOR * i + j] =
+              ((PAToATM(piston.intakeManifold.getP()) - 1) +
+               (PAToATM(piston.exhaustPipe.getP()) - 1));
+        }
 
         for (auto &logger : loggers) {
           logger.addSample();
@@ -184,6 +214,10 @@ int main(int argc, char *argv[]) {
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
     game.RenderPresent();
 
+    // Queue the samples into SDL’s audio buffer.
+    SDL_QueueAudio(
+        1, resampledData.data(), resampledData.size() * sizeof(float));
+
     /* Wait for next frame */
     const auto deltaTime =
         duration_cast<microseconds>(high_resolution_clock::now() - timeStart)
@@ -199,6 +233,8 @@ int main(int argc, char *argv[]) {
   ImGui_ImplSDL2_Shutdown();
   ImPlot::DestroyContext();
   ImGui::DestroyContext();
+
+  SDL_CloseAudio();
 
   game.Clean();
   return 0;
