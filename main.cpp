@@ -23,7 +23,7 @@ constexpr float getTimeStep_s(int mult, float frametime) {
 
 constexpr int AUDIO_FREQ = 44100;
 constexpr int SIMULATION_MULTIPLIER = 117;
-constexpr float FRAMETIME = 16.f; /* ms */
+constexpr float FRAMETIME = 100.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
 constexpr float SIMULATION_FREQUENCY =
     SIMULATION_MULTIPLIER * 1000.f / FRAMETIME;
@@ -41,17 +41,33 @@ int counter_gra = 0;
 int counter_sim = 0;
 bool simulation_go = true;
 std::binary_semaphore t1_semaphore{0};
+size_t piston_data_size = 10;
+std::vector<Piston> piston_data;
+size_t sim_idx = 0;
+size_t gra_idx = 0;
+int sim_overhead = 0;
+int thread_multi = 1;
 
-void simulation() {
+void simulation(EngineConfig const &cfg) {
+  Piston piston = Piston(cfg);
+
   while (simulation_go) {
-    counter_sim++;
+    while (thread_multi > 0) {
+      counter_sim++;
+      for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
+        piston.update(getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME));
+      }
+
+      // piston_data.push_back(piston);
+      sim_idx = (sim_idx + 1) % piston_data_size;
+
+      thread_multi--;
+    }
     t1_semaphore.acquire();
   }
 }
 
 int main(int argc, char *argv[]) {
-  std::thread t1(simulation);
-
   SDL_Init(SDL_INIT_AUDIO);
 
   SDL_AudioSpec desiredSpec;
@@ -106,9 +122,11 @@ int main(int argc, char *argv[]) {
     return 0;
   };
   cfg.evaluate();
-  Piston piston = Piston(cfg);
-  PistonGraphics pistonGraphics =
-      PistonGraphics(std::valarray<float>{350.f, 600.f}, &piston, 2000);
+  // Piston piston = Piston(cfg);
+  // PistonGraphics pistonGraphics =
+  //     PistonGraphics(std::valarray<float>{350.f, 600.f}, &piston, 2000);
+
+  std::thread t1(simulation, cfg);
 
   /* Game Loop */
   while (game.isGameRunning()) {
@@ -116,31 +134,35 @@ int main(int argc, char *argv[]) {
     const float deltaT = getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME);
 
     counter_gra++;
-    if (start) {
-      t1_semaphore.release();
-    }
 
     ImGui_ImplSDLRenderer2_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
     ImGui::Begin("Test");
-    ImGui::SliderFloat("Torque [Nm]", &piston.externalTorque, 0.f, 20.f);
-    ImGui::SliderFloat("Throttle", &piston.throttle, 0.f, 1.f);
-    ImGui::InputFloat("Combustion speed", &piston.cfg.combustion.speed);
-    ImGui::InputFloat("Combustion energy", &piston.cfg.combustion.energy);
+    // ImGui::SliderFloat("Torque [Nm]", &piston.externalTorque, 0.f, 20.f);
+    // ImGui::SliderFloat("Throttle", &piston.throttle, 0.f, 1.f);
+    // ImGui::InputFloat("Combustion speed", &piston.cfg.combustion.speed);
+    // ImGui::InputFloat("Combustion energy", &piston.cfg.combustion.energy);
     ImGui::End();
 
     ImGui::Begin("Test8");
     ImGui::Text("Time:       %.1f s", 0.001f * gameLoopCnt * FRAMETIME);
     ImGui::Text("Framerate:  %.0f Hz", 1000.f / FRAMETIME);
     ImGui::Text("Simulation: %.0f Hz", SIMULATION_FREQUENCY);
-    ImGui::Text("Engine Speed:  %.0f rpm", RADSToRPM(piston.getEngineSpeed()));
+    // ImGui::Text("Engine Speed:  %.0f rpm",
+    // RADSToRPM(piston.getEngineSpeed()));
     ImGui::Text("CPU Load:     %.0f / 100", 100 * cpuLoad);
     ImGui::Text("Graphics  :     %d", counter_gra);
     ImGui::Text("Simulation:     %d", counter_sim);
+    ImGui::Text("Sim idx:        %d", int(sim_idx));
+    ImGui::Text("Gra idx:        %d", int(gra_idx));
+    ImGui::Text("sim_overhead:   %d | %d",
+                int(sim_overhead),
+                counter_sim - counter_gra);
+
     ImGui::Checkbox("Start", &start);
-    ImGui::Checkbox("Ignition", &piston.ignitionOn);
+    // ImGui::Checkbox("Ignition", &piston.ignitionOn);
     ImGui::End();
 
     /* Rendering */
@@ -149,10 +171,22 @@ int main(int argc, char *argv[]) {
     game.handleEvents();
     game.RenderClear();
 
-    pistonGraphics.showPiston(game.renderer);
+    // PistonGraphics pistonGraphics = PistonGraphics(
+    //     std::valarray<float>{350.f, 600.f}, &piston_data[gra_idx], 2000);
+    // pistonGraphics.showPiston(game.renderer);
 
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
     game.RenderPresent();
+
+    // Prepare for next frame
+    gra_idx = (gra_idx + 1) % piston_data_size;
+    // Check simulation overhead
+    sim_overhead = (sim_idx >= gra_idx)
+                       ? sim_idx - gra_idx
+                       : (sim_idx + piston_data_size) - gra_idx;
+    // Release simulation thread
+    thread_multi = 4 - sim_overhead;
+    t1_semaphore.release();
 
     /* Wait for next frame */
     const auto deltaTime =
