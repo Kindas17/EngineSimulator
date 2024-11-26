@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <iostream>
 #include <numeric>
+#include <semaphore>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -36,7 +37,21 @@ std::vector<float> resampledData(AUDIO_SAMPLES + overhead);
 
 float cpuLoad = 0.f;
 
+int counter_gra = 0;
+int counter_sim = 0;
+bool simulation_go = true;
+std::binary_semaphore t1_semaphore{0};
+
+void simulation() {
+  while (simulation_go) {
+    counter_sim++;
+    t1_semaphore.acquire();
+  }
+}
+
 int main(int argc, char *argv[]) {
+  std::thread t1(simulation);
+
   SDL_Init(SDL_INIT_AUDIO);
 
   SDL_AudioSpec desiredSpec;
@@ -95,71 +110,14 @@ int main(int argc, char *argv[]) {
   PistonGraphics pistonGraphics =
       PistonGraphics(std::valarray<float>{350.f, 600.f}, &piston, 2000);
 
-  // Define the loggers
-  std::unordered_map<std::string, CycleLogger> loggers = {
-      {"PistonP",
-       CycleLogger([&piston]() { return PAToATM(piston.gas.getP()); })},
-
-      {"IntakeFlow", CycleLogger([&piston]() { return piston.intakeFlow; })},
-
-      {"PistonT",
-       CycleLogger([&piston]() { return KELVToCELS(piston.gas.getT()); })},
-
-      {"PistonOx", CycleLogger([&piston]() { return piston.gas.getOx(); })},
-
-      {"ExhaustFlow", CycleLogger([&piston]() { return piston.exhaustFlow; })},
-
-      {"Fuel", CycleLogger([&piston]() { return piston.gas.getFuel(); })},
-
-      {"PistonV",
-       CycleLogger([&piston]() { return M3ToCC(piston.gas.getV()); })},
-
-      {"IntakeP", CycleLogger([&piston]() {
-         return PAToATM(piston.intakeManifold.getP());
-       })},
-
-      {"ExhaustP",
-       CycleLogger([&piston]() { return PAToATM(piston.exhaustPipe.getP()); })},
-
-      {"IntakeOx",
-       CycleLogger([&piston]() { return piston.intakeManifold.getOx(); })},
-
-      {"ExhaustOx",
-       CycleLogger([&piston]() { return piston.exhaustPipe.getOx(); })},
-  };
-
   /* Game Loop */
   while (game.isGameRunning()) {
     const auto timeStart = high_resolution_clock::now();
     const float deltaT = getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME);
 
+    counter_gra++;
     if (start) {
-      gameLoopCnt++;
-
-      // Simulation
-      for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
-        piston.update(deltaT);
-
-        // Audio resampling
-        const auto rem = AUDIO_SAMPLES -
-                         RESAMPLING_FACTOR * SIMULATION_MULTIPLIER + overhead;
-        for (size_t j = 0; j < RESAMPLING_FACTOR + rem; ++j) {
-          resampledData[RESAMPLING_FACTOR * i + j] =
-              ((PAToATM(piston.intakeManifold.getP()) - 1) +
-               (PAToATM(piston.exhaustPipe.getP()) - 1));
-        }
-
-        for (auto &logger : loggers) {
-          logger.second.addSample();
-        }
-
-        if (piston.cycleTrigger) {
-          for (auto &logger : loggers) {
-            logger.second.trig();
-          }
-          piston.cycleTrigger = false;
-        }
-      }
+      t1_semaphore.release();
     }
 
     ImGui_ImplSDLRenderer2_NewFrame();
@@ -173,61 +131,14 @@ int main(int argc, char *argv[]) {
     ImGui::InputFloat("Combustion energy", &piston.cfg.combustion.energy);
     ImGui::End();
 
-    ImGui::Begin("ASD 1");
-    ImPlot::SetNextAxesToFit();
-    ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("Thermodynamic Cycle",
-                     loggers.at("PistonV").getData(),
-                     loggers.at("PistonP").getData(),
-                     loggers.at("PistonP").getSize());
-    ImPlot::EndPlot();
-    ImGui::End();
-
-    ImGui::Begin("ASD 2");
-    ImPlot::SetNextAxesToFit();
-    ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("Intake flow",
-                     loggers.at("IntakeFlow").getData(),
-                     loggers.at("IntakeFlow").getSize());
-    ImPlot::PlotLine("Exhaust flow",
-                     loggers.at("ExhaustFlow").getData(),
-                     loggers.at("ExhaustFlow").getSize());
-    ImPlot::EndPlot();
-    ImGui::End();
-
-    ImGui::Begin("ASD 3");
-    ImPlot::SetNextAxesToFit();
-    ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("Chm Ox",
-                     loggers.at("PistonOx").getData(),
-                     loggers.at("PistonOx").getSize());
-    ImPlot::PlotLine("Int Ox",
-                     loggers.at("IntakeOx").getData(),
-                     loggers.at("IntakeOx").getSize());
-    ImPlot::PlotLine("Exh Ox",
-                     loggers.at("ExhaustOx").getData(),
-                     loggers.at("ExhaustOx").getSize());
-    ImPlot::EndPlot();
-    ImGui::End();
-
-    ImGui::Begin("ASD 4");
-    ImPlot::SetNextAxesToFit();
-    ImPlot::BeginPlot("ASD");
-    ImPlot::PlotLine("Intake Pressure",
-                     loggers.at("IntakeP").getData(),
-                     loggers.at("IntakeP").getSize());
-    ImPlot::PlotLine("Exhaust Pressure",
-                     loggers.at("ExhaustP").getData(),
-                     loggers.at("ExhaustP").getSize());
-    ImPlot::EndPlot();
-    ImGui::End();
-
     ImGui::Begin("Test8");
     ImGui::Text("Time:       %.1f s", 0.001f * gameLoopCnt * FRAMETIME);
     ImGui::Text("Framerate:  %.0f Hz", 1000.f / FRAMETIME);
     ImGui::Text("Simulation: %.0f Hz", SIMULATION_FREQUENCY);
     ImGui::Text("Engine Speed:  %.0f rpm", RADSToRPM(piston.getEngineSpeed()));
     ImGui::Text("CPU Load:     %.0f / 100", 100 * cpuLoad);
+    ImGui::Text("Graphics  :     %d", counter_gra);
+    ImGui::Text("Simulation:     %d", counter_sim);
     ImGui::Checkbox("Start", &start);
     ImGui::Checkbox("Ignition", &piston.ignitionOn);
     ImGui::End();
@@ -242,10 +153,6 @@ int main(int argc, char *argv[]) {
 
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
     game.RenderPresent();
-
-    // Queue the samples into SDL’s audio buffer.
-    SDL_QueueAudio(
-        1, resampledData.data(), resampledData.size() * sizeof(float));
 
     /* Wait for next frame */
     const auto deltaTime =
@@ -264,6 +171,10 @@ int main(int argc, char *argv[]) {
   ImGui::DestroyContext();
 
   SDL_CloseAudio();
+
+  simulation_go = false;
+  t1_semaphore.release();
+  t1.join();
 
   game.Clean();
   return 0;
