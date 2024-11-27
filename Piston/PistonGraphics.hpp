@@ -18,6 +18,7 @@ class PistonGraphics {
                  int rFactor);
   void showPiston(SDL_Renderer *renderer);
   float getPistonPosition();
+  ~PistonGraphics();
 
   EngineConfig const &cfg;
   // [getCurrentAngle, ]

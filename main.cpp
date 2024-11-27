@@ -21,6 +21,7 @@ constexpr float getTimeStep_s(int mult, float frametime) {
   return frametime / (1000.f * mult);
 }
 
+constexpr int DESIRED_SIM_OVERHEAD = 3;
 constexpr int AUDIO_FREQ = 44100;
 constexpr int SIMULATION_MULTIPLIER = 117;
 constexpr float FRAMETIME = 10.f; /* ms */
@@ -31,9 +32,7 @@ constexpr size_t AUDIO_SAMPLES =
     SIMULATION_MULTIPLIER * AUDIO_FREQ / SIMULATION_FREQUENCY;
 constexpr size_t CIRCULAR_BUFFER_SIZE = AUDIO_SAMPLES * 5;
 constexpr size_t RESAMPLING_FACTOR = AUDIO_SAMPLES / SIMULATION_MULTIPLIER;
-
-constexpr size_t overhead = 0;
-std::vector<float> resampledData(AUDIO_SAMPLES + overhead);
+std::vector<float> resampledData(AUDIO_SAMPLES);
 
 float cpuLoad = 0.f;
 
@@ -69,8 +68,18 @@ void simulation(EngineConfig const &cfg) {
 }
 
 int main(int argc, char *argv[]) {
-  SDL_Init(SDL_INIT_AUDIO);
+  // Define the engine
+  EngineConfig cfg;
+  if (!cfg.loadFromFile("engine.json")) {
+    std::cerr << "Game OVER!" << std::endl;
+    return 0;
+  };
+  cfg.evaluate();
 
+  thread_multi = DESIRED_SIM_OVERHEAD;
+  std::thread t1(simulation, cfg);
+
+  SDL_Init(SDL_INIT_AUDIO);
   SDL_AudioSpec desiredSpec;
   SDL_zero(desiredSpec);
   desiredSpec.freq = AUDIO_FREQ;
@@ -115,16 +124,6 @@ int main(int argc, char *argv[]) {
     SDL_Quit();
     return -1;
   }
-
-  // Define the engine
-  EngineConfig cfg;
-  if (!cfg.loadFromFile("engine.json")) {
-    std::cerr << "Game OVER!" << std::endl;
-    return 0;
-  };
-  cfg.evaluate();
-
-  std::thread t1(simulation, cfg);
 
   /* Game Loop */
   while (game.isGameRunning()) {
@@ -183,7 +182,7 @@ int main(int argc, char *argv[]) {
                        ? sim_idx - gra_idx
                        : (sim_idx + piston_data_size) - gra_idx;
     // Release simulation thread
-    thread_multi = 4 - sim_overhead;
+    thread_multi = (DESIRED_SIM_OVERHEAD + 1) - sim_overhead;
     t1_semaphore.release();
 
     /* Wait for next frame */

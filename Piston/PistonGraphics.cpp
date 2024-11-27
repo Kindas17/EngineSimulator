@@ -49,6 +49,17 @@ PistonGraphics::PistonGraphics(std::valarray<float> pos,
   }
 }
 
+PistonGraphics::~PistonGraphics() {
+  if (pistonSurface) {
+    SDL_FreeSurface(pistonSurface);
+    pistonSurface = nullptr;
+  }
+  if (rodSurface) {
+    SDL_FreeSurface(rodSurface);
+    rodSurface = nullptr;
+  }
+}
+
 float PistonGraphics::getPistonPosition() {
   const float a = rodFoot[1];
   const float b = (rescaleFactor * cfg.cylinder.stroke / 2.f) *
@@ -110,8 +121,8 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
   // SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
 
   // // Rod
-  // SDL_RenderDrawLine(renderer, rodFoot[0], rodFoot[1], pistonPos[0],
-  // pistonPos[1]);
+  // SDL_RenderDrawLine(
+  //     renderer, rodFoot[0], rodFoot[1], pistonPos[0], pistonPos[1]);
 
   // Piston
   SDL_RenderDrawLine(renderer,
