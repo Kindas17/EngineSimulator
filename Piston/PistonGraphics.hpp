@@ -4,15 +4,24 @@
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 
+#include <valarray>
+
+#include "EngineConfig.hpp"
 #include "Piston.hpp"
 
 class PistonGraphics {
  public:
-  PistonGraphics(std::valarray<float> pos, Piston *p, int rescaleFactor);
+  // PistonGraphics(std::valarray<float> pos, Piston *p, int rescaleFactor);
+  PistonGraphics(std::valarray<float> pos,
+                 std::valarray<float> pistonData,
+                 EngineConfig const &engineCfg,
+                 int rFactor);
   void showPiston(SDL_Renderer *renderer);
   float getPistonPosition();
 
-  Piston *piston;
+  EngineConfig const &cfg;
+  // [getCurrentAngle, ]
+  std::valarray<float> piston_data;
 
   /* GGeometry */
   std::valarray<float> crankCenter;

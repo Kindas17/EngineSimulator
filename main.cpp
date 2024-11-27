@@ -23,7 +23,7 @@ constexpr float getTimeStep_s(int mult, float frametime) {
 
 constexpr int AUDIO_FREQ = 44100;
 constexpr int SIMULATION_MULTIPLIER = 117;
-constexpr float FRAMETIME = 100.f; /* ms */
+constexpr float FRAMETIME = 10.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
 constexpr float SIMULATION_FREQUENCY =
     SIMULATION_MULTIPLIER * 1000.f / FRAMETIME;
@@ -42,7 +42,7 @@ int counter_sim = 0;
 bool simulation_go = true;
 std::binary_semaphore t1_semaphore{0};
 size_t piston_data_size = 10;
-std::vector<Piston> piston_data;
+std::vector<std::valarray<float>> piston_data(piston_data_size);
 size_t sim_idx = 0;
 size_t gra_idx = 0;
 int sim_overhead = 0;
@@ -58,7 +58,8 @@ void simulation(EngineConfig const &cfg) {
         piston.update(getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME));
       }
 
-      // piston_data.push_back(piston);
+      piston_data[sim_idx] = std::valarray<float>{
+          piston.getCurrentAngle(), piston.getThetaAngle()};
       sim_idx = (sim_idx + 1) % piston_data_size;
 
       thread_multi--;
@@ -122,9 +123,6 @@ int main(int argc, char *argv[]) {
     return 0;
   };
   cfg.evaluate();
-  // Piston piston = Piston(cfg);
-  // PistonGraphics pistonGraphics =
-  //     PistonGraphics(std::valarray<float>{350.f, 600.f}, &piston, 2000);
 
   std::thread t1(simulation, cfg);
 
@@ -171,9 +169,9 @@ int main(int argc, char *argv[]) {
     game.handleEvents();
     game.RenderClear();
 
-    // PistonGraphics pistonGraphics = PistonGraphics(
-    //     std::valarray<float>{350.f, 600.f}, &piston_data[gra_idx], 2000);
-    // pistonGraphics.showPiston(game.renderer);
+    PistonGraphics pistonGraphics = PistonGraphics(
+        std::valarray<float>{350.f, 600.f}, piston_data[gra_idx], cfg, 2000);
+    pistonGraphics.showPiston(game.renderer);
 
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
     game.RenderPresent();
