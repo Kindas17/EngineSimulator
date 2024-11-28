@@ -28,7 +28,7 @@ static std::valarray<float> F_piston(float t,
                                      std::valarray<float> &st,
                                      float Ti,
                                      float Te) {
-  return std::valarray<float>{st[1], 0};  // Ti + Te};
+  return std::valarray<float>{st[1], Ti + Te};
 }
 
 Piston::Piston(EngineConfig engineCfg)
@@ -40,7 +40,7 @@ Piston::Piston(EngineConfig engineCfg)
       IntakeManifoldOrif(Orifice(0.f, intakeManifold, externalAir)),
       ExhaustPipeOrif(Orifice(0.f, exhaustPipe, externalAir)) {
   /* Dynamics */
-  state = std::valarray<float>{DEGToRAD(0.f), 0.5f};
+  state = std::valarray<float>{DEGToRAD(0.f), 0.f};
 
   /* Thermodynamics */
   gas = Gas(DEFAULT_AMBIENT_PRESSURE,

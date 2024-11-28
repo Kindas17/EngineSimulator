@@ -3,12 +3,14 @@
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <mutex>
 #include <numeric>
 #include <semaphore>
 #include <thread>
 #include <unordered_map>
 #include <vector>
 
+#include "EngineControls.hpp"
 #include "FrameRVis.hpp"
 #include "Game.hpp"
 #include "Logger.hpp"
@@ -24,7 +26,7 @@ constexpr float getTimeStep_s(int mult, float frametime) {
 constexpr int DESIRED_SIM_OVERHEAD = 3;
 constexpr int AUDIO_FREQ = 44100;
 constexpr int SIMULATION_MULTIPLIER = 117;
-constexpr float FRAMETIME = 10.f; /* ms */
+constexpr float FRAMETIME = 16.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
 constexpr float SIMULATION_FREQUENCY =
     SIMULATION_MULTIPLIER * 1000.f / FRAMETIME;
@@ -33,6 +35,9 @@ constexpr size_t AUDIO_SAMPLES =
 constexpr size_t CIRCULAR_BUFFER_SIZE = AUDIO_SAMPLES * 5;
 constexpr size_t RESAMPLING_FACTOR = AUDIO_SAMPLES / SIMULATION_MULTIPLIER;
 std::vector<float> resampledData(AUDIO_SAMPLES);
+
+// Engine Controls
+EngineControlsMgm engineControlsMgm;
 
 float cpuLoad = 0.f;
 
@@ -51,18 +56,29 @@ void simulation(EngineConfig const &cfg) {
   Piston piston = Piston(cfg);
 
   while (simulation_go) {
+    // Update the engine controls
+    auto ctrls = engineControlsMgm.getControls();
+    piston.externalTorque = ctrls.externalTorque;
+    piston.throttle = ctrls.throttle;
+    piston.ignitionOn = ctrls.ignitionOn;
+
     while (thread_multi > 0) {
       counter_sim++;
       for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
         piston.update(getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME));
       }
 
-      piston_data[sim_idx] = std::valarray<float>{
-          piston.getCurrentAngle(), piston.getThetaAngle()};
+      piston_data[sim_idx] = std::valarray<float>{piston.getCurrentAngle(),
+                                                  piston.getThetaAngle(),
+                                                  piston.intakeValve,
+                                                  piston.exhaustValve};
       sim_idx = (sim_idx + 1) % piston_data_size;
 
       thread_multi--;
     }
+
+    // Update the engine state
+    engineControlsMgm.setState(EngineState{piston.getEngineSpeed()});
     t1_semaphore.acquire();
   }
 }
@@ -125,10 +141,16 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  EngineControls engCtrls{};
+  EngineState engState{};
+
   /* Game Loop */
   while (game.isGameRunning()) {
     const auto timeStart = high_resolution_clock::now();
     const float deltaT = getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME);
+
+    // Get the current engine state
+    engState = engineControlsMgm.getState();
 
     counter_gra++;
 
@@ -137,8 +159,8 @@ int main(int argc, char *argv[]) {
     ImGui::NewFrame();
 
     ImGui::Begin("Test");
-    // ImGui::SliderFloat("Torque [Nm]", &piston.externalTorque, 0.f, 20.f);
-    // ImGui::SliderFloat("Throttle", &piston.throttle, 0.f, 1.f);
+    ImGui::SliderFloat("Torque [Nm]", &engCtrls.externalTorque, 0.f, 20.f);
+    ImGui::SliderFloat("Throttle", &engCtrls.throttle, 0.f, 1.f);
     // ImGui::InputFloat("Combustion speed", &piston.cfg.combustion.speed);
     // ImGui::InputFloat("Combustion energy", &piston.cfg.combustion.energy);
     ImGui::End();
@@ -147,19 +169,16 @@ int main(int argc, char *argv[]) {
     ImGui::Text("Time:       %.1f s", 0.001f * gameLoopCnt * FRAMETIME);
     ImGui::Text("Framerate:  %.0f Hz", 1000.f / FRAMETIME);
     ImGui::Text("Simulation: %.0f Hz", SIMULATION_FREQUENCY);
-    // ImGui::Text("Engine Speed:  %.0f rpm",
-    // RADSToRPM(piston.getEngineSpeed()));
+    ImGui::Text("Engine Speed:  %.0f rpm", RADSToRPM(engState.engineSpeed));
     ImGui::Text("CPU Load:     %.0f / 100", 100 * cpuLoad);
     ImGui::Text("Graphics  :     %d", counter_gra);
     ImGui::Text("Simulation:     %d", counter_sim);
-    ImGui::Text("Sim idx:        %d", int(sim_idx));
-    ImGui::Text("Gra idx:        %d", int(gra_idx));
     ImGui::Text("sim_overhead:   %d | %d",
                 int(sim_overhead),
                 counter_sim - counter_gra);
 
-    ImGui::Checkbox("Start", &start);
-    // ImGui::Checkbox("Ignition", &piston.ignitionOn);
+    // ImGui::Checkbox("Start", &start);
+    ImGui::Checkbox("Ignition", &engCtrls.ignitionOn);
     ImGui::End();
 
     /* Rendering */
@@ -174,6 +193,9 @@ int main(int argc, char *argv[]) {
 
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
     game.RenderPresent();
+
+    // Update engine controls
+    engineControlsMgm.setControls(engCtrls);
 
     // Prepare for next frame
     gra_idx = (gra_idx + 1) % piston_data_size;

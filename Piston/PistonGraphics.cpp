@@ -1,29 +1,5 @@
 #include "PistonGraphics.hpp"
 
-// PistonGraphics::PistonGraphics(std::valarray<float> pos,
-//                                Piston *p,
-//                                int rFactor) {
-//   this->crankCenter = pos;
-//   this->piston = p;
-//   this->rescaleFactor = rFactor;
-
-//   /* Cylinder walls position */
-//   this->cilinderRectPos = pos;
-//   this->cilinderRectPos[1] -= rescaleFactor * p->cfg.rod.length +
-//                               rescaleFactor * p->cfg.cylinder.stroke / 2.f;
-
-//   // Load an image into a surface
-//   pistonSurface = IMG_Load("assets/piston.png");
-//   if (!pistonSurface) {
-//     SDL_Log("Unable to load image! SDL_image Error: %s", IMG_GetError());
-//   }
-//   // Load an image into a surface
-//   rodSurface = IMG_Load("assets/rod.png");
-//   if (!rodSurface) {
-//     SDL_Log("Unable to load image! SDL_image Error: %s", IMG_GetError());
-//   }
-// }
-
 PistonGraphics::PistonGraphics(std::valarray<float> pos,
                                std::valarray<float> pistonData,
                                EngineConfig const &engineCfg,
@@ -171,32 +147,32 @@ void PistonGraphics::showPiston(SDL_Renderer *renderer) {
   SDL_DestroyTexture(pistonTexture);
   SDL_DestroyTexture(rodTexture);
 
-  // /* Draw Intake Valve */
-  // SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
-  // const int intakeValveH = piston->intakeValve * 10.f;
-  // SDL_RenderDrawLine(renderer,
-  //                    addStroke.x + rescaleFactor * cfg.cylinder.bore / 4.f,
-  //                    addStroke.y + intakeValveH,
-  //                    addStroke.x + rescaleFactor * cfg.cylinder.bore / 4.f,
-  //                    addStroke.y - 50.f + intakeValveH);
-  // SDL_RenderDrawLine(
-  //     renderer,
-  //     addStroke.x + rescaleFactor * cfg.cylinder.bore / 4.f - 10.f,
-  //     addStroke.y + intakeValveH,
-  //     addStroke.x + rescaleFactor * cfg.cylinder.bore / 4.f + 10.f,
-  //     addStroke.y + intakeValveH);
+  /* Draw Intake Valve */
+  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
+  const int intakeValveH = piston_data[2] * 10.f;
+  SDL_RenderDrawLine(renderer,
+                     addStroke.x + rescaleFactor * cfg.cylinder.bore / 4.f,
+                     addStroke.y + intakeValveH,
+                     addStroke.x + rescaleFactor * cfg.cylinder.bore / 4.f,
+                     addStroke.y - 50.f + intakeValveH);
+  SDL_RenderDrawLine(
+      renderer,
+      addStroke.x + rescaleFactor * cfg.cylinder.bore / 4.f - 10.f,
+      addStroke.y + intakeValveH,
+      addStroke.x + rescaleFactor * cfg.cylinder.bore / 4.f + 10.f,
+      addStroke.y + intakeValveH);
 
-  // const int exhaustValveH = piston->exhaustValve * 10.f;
-  // SDL_RenderDrawLine(
-  //     renderer,
-  //     addStroke.x + 3.f * rescaleFactor * cfg.cylinder.bore / 4.f,
-  //     addStroke.y + exhaustValveH,
-  //     addStroke.x + 3.f * rescaleFactor * cfg.cylinder.bore / 4.f,
-  //     addStroke.y - 50.f + exhaustValveH);
-  // SDL_RenderDrawLine(
-  //     renderer,
-  //     addStroke.x + 3.f * rescaleFactor * cfg.cylinder.bore / 4.f - 10.f,
-  //     addStroke.y + exhaustValveH,
-  //     addStroke.x + 3.f * rescaleFactor * cfg.cylinder.bore / 4.f + 10.f,
-  //     addStroke.y + exhaustValveH);
+  const int exhaustValveH = piston_data[3] * 10.f;
+  SDL_RenderDrawLine(
+      renderer,
+      addStroke.x + 3.f * rescaleFactor * cfg.cylinder.bore / 4.f,
+      addStroke.y + exhaustValveH,
+      addStroke.x + 3.f * rescaleFactor * cfg.cylinder.bore / 4.f,
+      addStroke.y - 50.f + exhaustValveH);
+  SDL_RenderDrawLine(
+      renderer,
+      addStroke.x + 3.f * rescaleFactor * cfg.cylinder.bore / 4.f - 10.f,
+      addStroke.y + exhaustValveH,
+      addStroke.x + 3.f * rescaleFactor * cfg.cylinder.bore / 4.f + 10.f,
+      addStroke.y + exhaustValveH);
 }
