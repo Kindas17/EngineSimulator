@@ -18,22 +18,59 @@
 #include "PistonGraphics.hpp"
 #include "Solver.hpp"
 
+// Function to linearly interpolate a signal from N samples to M samples
+template <size_t M>
+std::array<float, M> resampleLinear(const std::vector<float> &input) {
+  size_t N = input.size();
+  if (N == 0 || M == 0) {
+    throw std::invalid_argument("Input signal and M must have non-zero size.");
+  }
+
+  std::array<float, M> output;
+
+  // Calculate the resampling ratio
+  float scale = static_cast<float>(N - 1) / (M - 1);
+
+  for (size_t i = 0; i < M; ++i) {
+    // Calculate the corresponding position in the input
+    float pos = i * scale;
+    size_t idx = static_cast<size_t>(pos);  // Integer part
+    float frac = pos - idx;                 // Fractional part
+
+    // Handle edge case for the last sample
+    if (idx + 1 >= N) {
+      output[i] = input[idx];
+    } else {
+      // Linear interpolation
+      output[i] = input[idx] * (1.0 - frac) + input[idx + 1] * frac;
+    }
+  }
+
+  return output;
+}
+
 constexpr float getTimeStep_s(int mult, float frametime) {
   return frametime / (1000.f * mult);
 }
 
 constexpr int DESIRED_SIM_OVERHEAD = 3;
 constexpr int AUDIO_FREQ = 44100;
-constexpr int SIMULATION_MULTIPLIER = 117;
+constexpr int SIMULATION_MULTIPLIER = 200;
 constexpr float FRAMETIME = 16.f; /* ms */
 constexpr size_t SIZE_LOG = 2.f / (0.001f * FRAMETIME);
 constexpr float SIMULATION_FREQUENCY =
     SIMULATION_MULTIPLIER * 1000.f / FRAMETIME;
 constexpr size_t AUDIO_SAMPLES =
-    SIMULATION_MULTIPLIER * AUDIO_FREQ / SIMULATION_FREQUENCY;
+    (SIMULATION_MULTIPLIER * AUDIO_FREQ / SIMULATION_FREQUENCY) * 1.05;
 constexpr size_t CIRCULAR_BUFFER_SIZE = AUDIO_SAMPLES * 5;
 constexpr size_t RESAMPLING_FACTOR = AUDIO_SAMPLES / SIMULATION_MULTIPLIER;
-std::vector<float> resampledData(AUDIO_SAMPLES);
+
+std::vector<float> sampledData(SIMULATION_MULTIPLIER);
+constexpr size_t AUDIO_BUFFER_LENGTH = 10;
+int audio_cnt_gra = 0;
+int audio_cnt_sim = 0;
+std::array<float, AUDIO_SAMPLES> resampledBuffer;
+std::vector<std::array<float, AUDIO_SAMPLES>> audioBuffer(AUDIO_BUFFER_LENGTH);
 
 // Engine Controls
 EngineControlsMgm engineControlsMgm;
@@ -52,6 +89,29 @@ size_t sim_idx = 0;
 size_t gra_idx = 0;
 int sim_overhead = 0;
 int thread_multi = 1;
+
+void audioCallback(void *userdata, Uint8 *stream, int len) {
+  float *buffer = reinterpret_cast<float *>(stream);
+  int samples = len / sizeof(float);
+
+  const auto asd = (audio_cnt_sim > audio_cnt_gra)
+                       ? (audio_cnt_sim - audio_cnt_gra)
+                       : (audio_cnt_sim - audio_cnt_gra + AUDIO_BUFFER_LENGTH);
+  std::cout << audio_cnt_sim - audio_cnt_gra << std::endl;
+
+  for (int i = 0; i < samples; ++i) {
+    buffer[i] = audioBuffer[audio_cnt_gra][i];
+  }
+
+  // Check simulation overhead
+  sim_overhead = (audio_cnt_sim >= audio_cnt_gra)
+                     ? audio_cnt_sim - audio_cnt_gra
+                     : (audio_cnt_sim + AUDIO_BUFFER_LENGTH) - audio_cnt_gra;
+  // Release simulation thread
+  thread_multi = (DESIRED_SIM_OVERHEAD + 1) - sim_overhead;
+  t1_semaphore.release();
+  audio_cnt_gra = (audio_cnt_gra + 1) % AUDIO_BUFFER_LENGTH;
+}
 
 void simulation(EngineConfig const &cfg) {
   Piston piston = Piston(cfg);
@@ -106,12 +166,19 @@ void simulation(EngineConfig const &cfg) {
       for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
         piston.update(getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME));
 
+        sampledData[i] = ((PAToATM(piston.intakeManifold.getP()) - 1) +
+                          (PAToATM(piston.exhaustPipe.getP()) - 1));
+
         loggerMgm.logAll();
         if (piston.cycleTrigger) {
           loggerMgm.resetAll();
           piston.cycleTrigger = false;
         }
       }
+
+      // Queue the samples into the audio buffer
+      audioBuffer[audio_cnt_sim] = resampleLinear<AUDIO_SAMPLES>(sampledData);
+      audio_cnt_sim = (audio_cnt_sim + 1) % AUDIO_BUFFER_LENGTH;
 
       piston_data[sim_idx] = std::valarray<float>{piston.getCurrentAngle(),
                                                   piston.getThetaAngle(),
@@ -147,6 +214,7 @@ int main(int argc, char *argv[]) {
   desiredSpec.format = AUDIO_F32SYS;
   desiredSpec.channels = 1;
   desiredSpec.samples = AUDIO_SAMPLES;
+  desiredSpec.callback = audioCallback;
 
   // Open the audio device in non-callback mode (using queue).
   if (SDL_OpenAudio(&desiredSpec, nullptr) < 0) {
@@ -154,9 +222,6 @@ int main(int argc, char *argv[]) {
     SDL_Quit();
     return 1;
   }
-
-  // Start audio playback.
-  SDL_PauseAudio(0);
 
   bool start = false;
   size_t gameLoopCnt = 0;
@@ -188,6 +253,9 @@ int main(int argc, char *argv[]) {
 
   EngineControls engCtrls{};
   EngineState engState{};
+
+  // Start audio playback.
+  SDL_PauseAudio(0);
 
   /* Game Loop */
   while (game.isGameRunning()) {
@@ -288,13 +356,13 @@ int main(int argc, char *argv[]) {
 
     // Prepare for next frame
     gra_idx = (gra_idx + 1) % piston_data_size;
-    // Check simulation overhead
-    sim_overhead = (sim_idx >= gra_idx)
-                       ? sim_idx - gra_idx
-                       : (sim_idx + piston_data_size) - gra_idx;
-    // Release simulation thread
-    thread_multi = (DESIRED_SIM_OVERHEAD + 1) - sim_overhead;
-    t1_semaphore.release();
+    // // Check simulation overhead
+    // sim_overhead = (sim_idx >= gra_idx)
+    //                    ? sim_idx - gra_idx
+    //                    : (sim_idx + piston_data_size) - gra_idx;
+    // // Release simulation thread
+    // thread_multi = (DESIRED_SIM_OVERHEAD + 1) - sim_overhead;
+    // t1_semaphore.release();
 
     /* Wait for next frame */
     const auto deltaTime =
