@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "EngineControls.hpp"
-#include "FrameRVis.hpp"
 #include "Game.hpp"
 #include "Logger.hpp"
 #include "Orifice.hpp"
@@ -38,6 +37,8 @@ std::vector<float> resampledData(AUDIO_SAMPLES);
 
 // Engine Controls
 EngineControlsMgm engineControlsMgm;
+// Logger Manager
+LoggerMgm loggerMgm;
 
 float cpuLoad = 0.f;
 
@@ -55,6 +56,44 @@ int thread_multi = 1;
 void simulation(EngineConfig const &cfg) {
   Piston piston = Piston(cfg);
 
+  loggerMgm.addLogger("PistonP", CycleLogger([&piston]() {
+                        return PAToATM(piston.gas.getP());
+                      }));
+
+  loggerMgm.addLogger(
+      "IntakeFlow", CycleLogger([&piston]() { return piston.intakeFlow; }));
+
+  loggerMgm.addLogger("PistonT", CycleLogger([&piston]() {
+                        return KELVToCELS(piston.gas.getT());
+                      }));
+
+  loggerMgm.addLogger(
+      "PistonOx", CycleLogger([&piston]() { return piston.gas.getOx(); }));
+
+  loggerMgm.addLogger(
+      "ExhaustFlow", CycleLogger([&piston]() { return piston.exhaustFlow; }));
+
+  loggerMgm.addLogger(
+      "Fuel", CycleLogger([&piston]() { return piston.gas.getFuel(); }));
+
+  loggerMgm.addLogger("PistonV", CycleLogger([&piston]() {
+                        return M3ToCC(piston.gas.getV());
+                      }));
+
+  loggerMgm.addLogger("IntakeP", CycleLogger([&piston]() {
+                        return PAToATM(piston.intakeManifold.getP());
+                      }));
+
+  loggerMgm.addLogger("ExhaustP", CycleLogger([&piston]() {
+                        return PAToATM(piston.exhaustPipe.getP());
+                      }));
+  loggerMgm.addLogger("IntakeOx", CycleLogger([&piston]() {
+                        return piston.intakeManifold.getOx();
+                      }));
+  loggerMgm.addLogger("ExhaustOx", CycleLogger([&piston]() {
+                        return piston.exhaustPipe.getOx();
+                      }));
+
   while (simulation_go) {
     // Update the engine controls
     auto ctrls = engineControlsMgm.getControls();
@@ -66,6 +105,12 @@ void simulation(EngineConfig const &cfg) {
       counter_sim++;
       for (size_t i = 0; i < SIMULATION_MULTIPLIER; ++i) {
         piston.update(getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME));
+
+        loggerMgm.logAll();
+        if (piston.cycleTrigger) {
+          loggerMgm.resetAll();
+          piston.cycleTrigger = false;
+        }
       }
 
       piston_data[sim_idx] = std::valarray<float>{piston.getCurrentAngle(),
@@ -146,7 +191,7 @@ int main(int argc, char *argv[]) {
 
   /* Game Loop */
   while (game.isGameRunning()) {
-    const auto timeStart = high_resolution_clock::now();
+    const auto timeStart = std::chrono::high_resolution_clock::now();
     const float deltaT = getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME);
 
     // Get the current engine state
@@ -161,8 +206,55 @@ int main(int argc, char *argv[]) {
     ImGui::Begin("Test");
     ImGui::SliderFloat("Torque [Nm]", &engCtrls.externalTorque, 0.f, 20.f);
     ImGui::SliderFloat("Throttle", &engCtrls.throttle, 0.f, 1.f);
-    // ImGui::InputFloat("Combustion speed", &piston.cfg.combustion.speed);
-    // ImGui::InputFloat("Combustion energy", &piston.cfg.combustion.energy);
+    ImGui::End();
+
+    ImGui::Begin("ASD 1");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Thermodynamic Cycle",
+                     loggerMgm.getLoggerData("PistonV"),
+                     loggerMgm.getLoggerData("PistonP"),
+                     loggerMgm.getLoggerSize("PistonP"));
+    ImPlot::EndPlot();
+    ImGui::End();
+
+    ImGui::Begin("ASD 2");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Intake flow",
+                     loggerMgm.getLoggerData("IntakeFlow"),
+                     loggerMgm.getLoggerSize("IntakeFlow"));
+    ImPlot::PlotLine("Exhaust flow",
+                     loggerMgm.getLoggerData("ExhaustFlow"),
+                     loggerMgm.getLoggerSize("ExhaustFlow"));
+    ImPlot::EndPlot();
+    ImGui::End();
+
+    ImGui::Begin("ASD 3");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Chm Ox",
+                     loggerMgm.getLoggerData("PistonOx"),
+                     loggerMgm.getLoggerSize("PistonOx"));
+    ImPlot::PlotLine("Int Ox",
+                     loggerMgm.getLoggerData("IntakeOx"),
+                     loggerMgm.getLoggerSize("IntakeOx"));
+    ImPlot::PlotLine("Exh Ox",
+                     loggerMgm.getLoggerData("ExhaustOx"),
+                     loggerMgm.getLoggerSize("ExhaustOx"));
+    ImPlot::EndPlot();
+    ImGui::End();
+
+    ImGui::Begin("ASD 4");
+    ImPlot::SetNextAxesToFit();
+    ImPlot::BeginPlot("ASD");
+    ImPlot::PlotLine("Intake Pressure",
+                     loggerMgm.getLoggerData("IntakeP"),
+                     loggerMgm.getLoggerSize("IntakeP"));
+    ImPlot::PlotLine("Exhaust Pressure",
+                     loggerMgm.getLoggerData("ExhaustP"),
+                     loggerMgm.getLoggerSize("ExhaustP"));
+    ImPlot::EndPlot();
     ImGui::End();
 
     ImGui::Begin("Test8");
@@ -171,13 +263,10 @@ int main(int argc, char *argv[]) {
     ImGui::Text("Simulation: %.0f Hz", SIMULATION_FREQUENCY);
     ImGui::Text("Engine Speed:  %.0f rpm", RADSToRPM(engState.engineSpeed));
     ImGui::Text("CPU Load:     %.0f / 100", 100 * cpuLoad);
-    ImGui::Text("Graphics  :     %d", counter_gra);
-    ImGui::Text("Simulation:     %d", counter_sim);
-    ImGui::Text("sim_overhead:   %d | %d",
-                int(sim_overhead),
+    ImGui::Text("Graphics:       %d | %d | %d",
+                counter_gra,
+                counter_sim,
                 counter_sim - counter_gra);
-
-    // ImGui::Checkbox("Start", &start);
     ImGui::Checkbox("Ignition", &engCtrls.ignitionOn);
     ImGui::End();
 
@@ -209,7 +298,8 @@ int main(int argc, char *argv[]) {
 
     /* Wait for next frame */
     const auto deltaTime =
-        duration_cast<microseconds>(high_resolution_clock::now() - timeStart)
+        duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - timeStart)
             .count();
     const auto delay = FRAMETIME - (deltaTime / 1000);
     cpuLoad = 0.99f * cpuLoad + 0.01f * deltaTime / (FRAMETIME * 1000);

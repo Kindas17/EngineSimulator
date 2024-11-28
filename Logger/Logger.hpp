@@ -1,6 +1,7 @@
 #ifndef LOGGER_HPP_
 #define LOGGER_HPP_
 #include <functional>
+#include <string>
 #include <vector>
 
 class Logger {
@@ -31,6 +32,36 @@ class CycleLogger {
   float *getData();
   std::size_t getSize();
   std::vector<float> getV();
+};
+
+class LoggerMgm {
+ private:
+  std::unordered_map<std::string, CycleLogger> loggers;
+
+ public:
+  float *getLoggerData(std::string name) {
+    return loggers.at(name).getData();
+  }
+
+  size_t getLoggerSize(std::string name) {
+    return loggers.at(name).getSize();
+  }
+
+  void addLogger(std::string name, CycleLogger logger) {
+    loggers.insert({name, logger});
+  }
+
+  void logAll() {
+    for (auto &logger : loggers) {
+      logger.second.addSample();
+    }
+  }
+
+  void resetAll() {
+    for (auto &logger : loggers) {
+      logger.second.trig();
+    }
+  }
 };
 
 #endif
