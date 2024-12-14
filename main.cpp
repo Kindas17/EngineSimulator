@@ -67,6 +67,7 @@ constexpr size_t RESAMPLING_FACTOR = AUDIO_SAMPLES / SIMULATION_MULTIPLIER;
 
 std::vector<float> sampledData(SIMULATION_MULTIPLIER);
 constexpr size_t AUDIO_BUFFER_LENGTH = 10;
+constexpr size_t GRAPHICS_BUFFER_LENGTH = 10;
 int audio_cnt_gra = 0;
 int audio_cnt_sim = 0;
 std::array<float, AUDIO_SAMPLES> resampledBuffer;
@@ -83,8 +84,7 @@ int counter_gra = 0;
 int counter_sim = 0;
 bool simulation_go = true;
 std::binary_semaphore t1_semaphore{0};
-size_t piston_data_size = 10;
-std::vector<std::valarray<float>> piston_data(piston_data_size);
+std::vector<std::valarray<float>> piston_data(GRAPHICS_BUFFER_LENGTH);
 size_t sim_idx = 0;
 size_t gra_idx = 0;
 int sim_overhead = 0;
@@ -93,11 +93,6 @@ int thread_multi = 1;
 void audioCallback(void *userdata, Uint8 *stream, int len) {
   float *buffer = reinterpret_cast<float *>(stream);
   int samples = len / sizeof(float);
-
-  const auto asd = (audio_cnt_sim > audio_cnt_gra)
-                       ? (audio_cnt_sim - audio_cnt_gra)
-                       : (audio_cnt_sim - audio_cnt_gra + AUDIO_BUFFER_LENGTH);
-  std::cout << audio_cnt_sim - audio_cnt_gra << std::endl;
 
   for (int i = 0; i < samples; ++i) {
     buffer[i] = audioBuffer[audio_cnt_gra][i];
@@ -184,7 +179,7 @@ void simulation(EngineConfig const &cfg) {
                                                   piston.getThetaAngle(),
                                                   piston.intakeValve,
                                                   piston.exhaustValve};
-      sim_idx = (sim_idx + 1) % piston_data_size;
+      sim_idx = (sim_idx + 1) % GRAPHICS_BUFFER_LENGTH;
 
       thread_multi--;
     }
@@ -257,11 +252,11 @@ int main(int argc, char *argv[]) {
   // Start audio playback.
   SDL_PauseAudio(0);
 
+  auto next_frame = std::chrono::high_resolution_clock::now() +
+                    std::chrono::milliseconds(int(FRAMETIME));
+
   /* Game Loop */
   while (game.isGameRunning()) {
-    const auto timeStart = std::chrono::high_resolution_clock::now();
-    const float deltaT = getTimeStep_s(SIMULATION_MULTIPLIER, FRAMETIME);
-
     // Get the current engine state
     engState = engineControlsMgm.getState();
 
@@ -355,25 +350,19 @@ int main(int argc, char *argv[]) {
     engineControlsMgm.setControls(engCtrls);
 
     // Prepare for next frame
-    gra_idx = (gra_idx + 1) % piston_data_size;
-    // // Check simulation overhead
-    // sim_overhead = (sim_idx >= gra_idx)
-    //                    ? sim_idx - gra_idx
-    //                    : (sim_idx + piston_data_size) - gra_idx;
-    // // Release simulation thread
-    // thread_multi = (DESIRED_SIM_OVERHEAD + 1) - sim_overhead;
-    // t1_semaphore.release();
+    gra_idx = (gra_idx + 1) % GRAPHICS_BUFFER_LENGTH;
 
-    /* Wait for next frame */
-    const auto deltaTime =
-        duration_cast<std::chrono::microseconds>(
-            std::chrono::high_resolution_clock::now() - timeStart)
-            .count();
-    const auto delay = FRAMETIME - (deltaTime / 1000);
-    cpuLoad = 0.99f * cpuLoad + 0.01f * deltaTime / (FRAMETIME * 1000);
+    sim_overhead = (sim_idx >= gra_idx)
+                       ? sim_idx - gra_idx
+                       : (sim_idx + AUDIO_BUFFER_LENGTH) - gra_idx;
 
-    std::this_thread::sleep_for(std::chrono::microseconds(
-        static_cast<int>(FRAMETIME * 1000) - deltaTime));
+    // Wait for next frame, slow down the graphics thread if it's going too fast
+    // or speed it up otherwise
+    const int add_wait =
+        ((sim_overhead < DESIRED_SIM_OVERHEAD) ? FRAMETIME / 4 : 0) -
+        ((sim_overhead > DESIRED_SIM_OVERHEAD) ? FRAMETIME / 4 : 0);
+    next_frame += std::chrono::milliseconds(int(FRAMETIME) + add_wait);
+    std::this_thread::sleep_until(next_frame);
   }
 
   ImGui_ImplSDLRenderer2_Shutdown();
